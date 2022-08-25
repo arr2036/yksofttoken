@@ -123,8 +123,8 @@ If the sub-second use counter reaches 7, we sleep for one second before generati
 
 ## Logging
 
-For robustness when calling yksoft from a VPN client, informational and debugging
-output goes to stderr, only the OTP token is written to stdout.
+For robustness when calling yksoft from a VPN client, debugging output goes to stderr, 
+only the OTP token and registration information is written to stdout.
 
 Debug logging may be enabled with `-d`.
 
