@@ -14,7 +14,7 @@ Yubikey's HOTP functionality.  Unfortunately `ykgenerate` doesn't persist counte
 information, track time between OTP code generation, and many other small bits and
 pieces that are needed to properly emulate a hardware token.
 
-:::note
+**NOTE**
 
 yksoft is not intended to be a replacement for a Yubikey in situations that require
 high security, this utility is no where near as secure as a proper physical key.
