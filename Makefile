@@ -5,8 +5,8 @@ ifeq ($(uname_s),Linux)
   arc4lib=-lbsd
 endif
 ifeq ($(uname_s),Darwin)
-  libprefix=/usr/local/lib
-  incprefix=/usr/local/include
+  libprefix=$(shell brew --prefix)/lib
+  incprefix=$(shell brew --prefix)/include
   arc4lib=
 endif
 
