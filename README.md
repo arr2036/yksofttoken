@@ -1,4 +1,4 @@
-# Emulates a physical yubikey token
+# Emulates a physical yubikey token in HOTP mode
 
 Sometimes it's useful to emulate a physical Yubikey token in software, examples of this include:
 
