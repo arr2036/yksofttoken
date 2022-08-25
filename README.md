@@ -27,7 +27,7 @@ high security, this utility is no where near as secure as a proper physical key.
 
 yksoft has a single 3rd party dependency which is `libyubikey`.
 
-yksoft also requires the `arc4random` functions be provided by the standard library.
+yksoft also requires the `arc4random` functions be provided by the BSD standard library.
 
 ### macos
 
