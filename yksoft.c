@@ -95,7 +95,7 @@ int persistent_file_write(int token_dir_fd, char const *token_dir, char const *p
 
 	umask(S_IRWXG | S_IRWXO);
 
-	persist_fd = openat(token_dir_fd, path, O_RDWR | O_CREAT);
+	persist_fd = openat(token_dir_fd, path, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
 	if (persist_fd < 0) {
 	open_failed:
 		ERROR("Failed opening persistance file \"%s/%s\": %s", token_dir, path, strerror(errno));
