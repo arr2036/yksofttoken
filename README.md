@@ -57,26 +57,25 @@ permissions on it are set correctly, i.e. NOT world readable/writable.  yksoft w
 refuse to run with incorrect permissions.
 
 When the token persistence file is created, data needed to register the soft token
-with an authentication server is written to stderr, and the OTP is written to stdout.
+with an authentication server is written to stdout and no OTP is produced.
 
 ```bash
 > yksoft not_a_physical_token
-Registration information
-===
-public_id (modhex): ddddrgnrvrft
-public_id (dec): 37532741729357
-private_id (hex): 8351cd0b8275
-aes_key (hex): 36d5d075a7085e61e13d8a6458b2e42f
-
-ddddrgnrvrfttiihurejrittdiefhnncdtndbghkdcch
+public_id_modhex: ddddjkdcungg
+public_id_hex: 22228920eb55
+public_id_dec: 37531724868437
+private_id_modhex: bclcegdnhdvn
+private_id_hex: 10a0352b62fb
+private_id_dec: 18280272847611
+aes_key_hex: 622708a469ece555bd1fc3ee20c3222a
 ```
 
-Subsequent calls (where the token persistence file exists) will only write an OTP to
+Subsequent calls (where the token persistence file exists) will write an OTP to
 stdout.
 
 ```bash
 > yksoft not_a_physical_token
-ddddrgnrvrftnvnbhhrdfjhncebrbbejdfkjnftuduct
+ddddjkdcunggjfnkgjedvntebkukhejnbffchurkgruc
 ```
 
 If you need to see the registration information again, either cat the persistence file

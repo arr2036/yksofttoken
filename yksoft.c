@@ -58,7 +58,7 @@ static bool debug = false;
 static char const *prog;
 
 #define ERROR(_fmt, ...) fprintf(stderr, _fmt "\n", ## __VA_ARGS__)
-#define INFO(_fmt, ...) fprintf(stderr, _fmt "\n", ## __VA_ARGS__)
+#define INFO(_fmt, ...) fprintf(stdout, _fmt "\n", ## __VA_ARGS__)
 #define DEBUG(_fmt, ...) if (debug) fprintf(stderr, _fmt "\n", ## __VA_ARGS__)
 
 typedef struct {
@@ -189,15 +189,72 @@ int persistent_data_generate(yksoft_t *out,
 	return 0;
 }
 
+int persistent_data_update(yksoft_t *out)
+{
+	time_t		now = time(NULL);
+	uint64_t	hztime;
+
+	/*
+	 *	Too many session uses, increment the
+	 *	main counter.
+	 */
+	if (out->tok.use == 0xff) {
+		DEBUG("Session counter wrapped");
+
+		/*
+		 *	Token is dead if counter can't be incremented
+		 */
+		if (++out->tok.ctr == 0x7fff) {
+			ERROR("Token counter at max, token must be regenerated");
+			return -1;
+		}
+		out->ponrand = arc4random();	/* We don't *really* need to regenerate this, but whatever */
+		out->tok.use = 1;		/* Reset session use counter */
+	} else {
+		out->tok.use++;			/* Increment the session counter */
+	}
+
+	/*
+	 *	We go to great lengths to be lazy and not
+	 *	have to figure out the high precision
+	 *	time functions for the platform.
+	 */
+again:
+	if (now == out->lastuse) {
+		if ((out->ponrand & 0x0000000f) > 6) {		/* Rate limit generations */
+			DEBUG("Waiting for 1 second before generating new token");
+			sleep(1);
+			now = time(NULL);
+			out->ponrand &= 0xfffffff0;		/* Clear 8hz nibble */
+			goto again;
+		} else {
+			out->ponrand++;
+		}
+	} else {
+		out->lastuse = now;				/* Last used is now */
+		out->ponrand &= 0xfffffff0;			/* Clear 8hz nibble */
+	}
+
+	/*
+	 *	Figure out what 8hz time is...
+	 */
+	hztime = (now - out->created) * 8;
+	hztime += out->ponrand;
+	hztime %= 0xffffff;	/* 24bit wrap */
+
+	out->tok.tstpl = hztime & 0xffff;
+	out->tok.tstph = (hztime >> 16) & 0xff;
+	out->tok.rnd = arc4random();
+
+	return 0;
+}
+
 int persistent_data_load(yksoft_t *out, char const *path)
 {
 	FILE			*persist;
 	char			buff[256];
 	char			key[12];
 	unsigned long long	num;
-	bool			incr_counter = false;
-	time_t			now = time(NULL);
-	uint64_t		hztime;
 
 	if (!(persist = fopen(path, "r"))) {
 		ERROR("Failed opening persistance file: %s", strerror(errno));
@@ -290,10 +347,6 @@ int persistent_data_load(yksoft_t *out, char const *path)
 				ERROR("Invalid session value");
 				goto error;
 			}
-			if (num == 0xff) {	/* Wrap at 8 bits and increment the counter */
-				DEBUG("Session counter wrapped");
-				incr_counter = true;
-			}
 			out->tok.use = (uint8_t)num;
 
 			DEBUG("session: %u", out->tok.use);
@@ -316,7 +369,7 @@ int persistent_data_load(yksoft_t *out, char const *path)
 				goto error;
 			}
 			out->lastuse = (time_t)num;
-			if (out->lastuse > now) {
+			if (out->lastuse > time(NULL)) {
 				ERROR("lastuse time travel detected, refusing to generated token for %"PRIu64"s",
 				      (uint64_t)(out->lastuse - num));
 				goto error;
@@ -343,57 +396,6 @@ int persistent_data_load(yksoft_t *out, char const *path)
 		goto error;
 	}
 	fclose(persist);
-
-	/*
-	 *	Too many session uses, increment the
-	 *	main counter.
-	 */
-	if (incr_counter) {
-		/*
-		 *	Token is dead if counter can't be incremented
-		 */
-		if (++out->tok.ctr == 0x7fff) {
-			ERROR("Token counter at max, token must be regenerated");
-			goto error;
-		}
-		out->ponrand = arc4random();	/* We don't *really* need to regenerate this, but whatever */
-		out->tok.use = 1;		/* Reset session use counter */
-	} else {
-		out->tok.use++;			/* Increment the session counter */
-	}
-
-	/*
-	 *	We go to great lengths to be lazy and not
-	 *	have to figure out the high precision
-	 *	time functions for the platform.
-	 */
-again:
-	if (now == out->lastuse) {
-		if ((out->ponrand & 0x0000000f) > 6) {		/* Rate limit generations */
-			DEBUG("Waiting for 1 second before generating new token");
-			sleep(1);
-			now = time(NULL);
-			out->ponrand &= 0xfffffff0;		/* Clear 8hz nibble */
-			goto again;
-		} else {
-			out->ponrand++;
-		}
-	} else {
-		out->lastuse = now;				/* Last used is now */
-		out->ponrand &= 0xfffffff0;			/* Clear 8hz nibble */
-	}
-
-	/*
-	 *	Figure out what 8hz time is...
-	 */
-	hztime = (now - out->created) * 8;
-	hztime += out->ponrand;
-	hztime %= 0xffffff;	/* 24bit wrap */
-
-	out->tok.tstpl = hztime & 0xffff;
-	out->tok.tstph = (hztime >> 16) & 0xff;
-	out->tok.rnd = arc4random();
-
 	DEBUG("");
 
 	return 0;
@@ -410,7 +412,7 @@ static __attribute__((noreturn)) void usage(int ret)
 	INFO("                   Defaults to <16 byte random>.");
 	INFO("  -c <counter>     Counter for initialisation (0-32766).  Will always be incremented by one on first use.");
 	INFO("                   Defaults to 0.");
-	INFO("  -r               Prints out registration information.");
+	INFO("  -r               Prints out registration information to stderr.");
 	INFO("  -h               This help text.");
 	INFO("");
 	INFO("Emulate a hardware yubikey token in HOTP mode.");
@@ -530,6 +532,7 @@ int main(int argc, char *argv[])
 		}
 
 		if (persistent_data_load(&yksoft, file) < 0) EXIT_WITH_FAILURE;
+		if (persistent_data_update(&yksoft) < 0) EXIT_WITH_FAILURE;
 
 		if (got_public_id) {
 			if (memcmp(public_id, yksoft.public_id, public_id_len) != 0) {
@@ -560,7 +563,7 @@ int main(int argc, char *argv[])
 			yksoft.tok.ctr = counter;
 		}
 
-		if (persistent_file_write(file, &yksoft) < 0) EXIT_WITH_FAILURE;
+		if (!show_registration_info && (persistent_file_write(file, &yksoft) < 0)) EXIT_WITH_FAILURE;
 	} else {
 		if (persistent_data_generate(&yksoft,
 					     got_public_id ? public_id : NULL,
@@ -572,21 +575,8 @@ int main(int argc, char *argv[])
 		 *	New token, print out the identifier and aes_key
 		 */
 		show_registration_info = true;
-
 		if (persistent_file_write(file, &yksoft) < 0) EXIT_WITH_FAILURE;
 	}
-
-	yksoft.tok.crc = ~yubikey_crc16((void *)&yksoft.tok, sizeof(yksoft.tok) - sizeof(yksoft.tok.crc));
-
-	DEBUG("Generated data");
-	DEBUG("===");
-	DEBUG("timestamp: %u, low %u (0x%x), high %u (0x%x)",
-	      (uint32_t)(yksoft.tok.tstpl | (yksoft.tok.tstph << 16)),
-	      yksoft.tok.tstpl, yksoft.tok.tstpl,
-	      yksoft.tok.tstph, yksoft.tok.tstph);
-	DEBUG("random: %u (0x%x)", yksoft.tok.rnd, yksoft.tok.rnd);
-	DEBUG("crc: %u (0x%x)", yksoft.tok.crc, yksoft.tok.crc);
-	DEBUG("");
 
 	if (show_registration_info) {
 		char	public_id_modhex[(sizeof(yksoft.public_id) * 2) + 1];
@@ -601,24 +591,37 @@ int main(int argc, char *argv[])
 		yubikey_hex_encode(private_id_hex, (char const *)yksoft.tok.uid, sizeof(yksoft.tok.uid));
 		yubikey_hex_encode(aes_key_hex, (char const *)yksoft.aes_key, sizeof(yksoft.aes_key));
 
-		INFO("Registration information");
-		INFO("===");
-		INFO("public_id (modhex): %s", public_id_modhex);
-		DEBUG("public_id (hex): %s", public_id_hex);
-		INFO("public_id (dec): %" PRIu64, nbo_48(yksoft.public_id));
-		DEBUG("private_id (modhex): %s", private_id_modhex);
-		INFO("private_id (hex): %s", private_id_hex);
-		DEBUG("private_id (dec): %" PRIu64, nbo_48(yksoft.tok.uid));
-		INFO("aes_key (hex): %s", aes_key_hex);
-		INFO("");
+		DEBUG("Registration information");
+		DEBUG("===");
+		INFO("public_id_modhex: %s", public_id_modhex);
+		INFO("public_id_hex: %s", public_id_hex);
+		INFO("public_id_dec: %" PRIu64, nbo_48(yksoft.public_id));
+		INFO("private_id_modhex: %s", private_id_modhex);
+		INFO("private_id_hex: %s", private_id_hex);
+		INFO("private_id_dec: %" PRIu64, nbo_48(yksoft.tok.uid));
+		INFO("aes_key_hex: %s", aes_key_hex);
+		DEBUG("");
+
+		EXIT_WITH_SUCCESS;
 	}
+
+	yksoft.tok.crc = ~yubikey_crc16((void *)&yksoft.tok, sizeof(yksoft.tok) - sizeof(yksoft.tok.crc));
+
+	DEBUG("Generated data");
+	DEBUG("===");
+	DEBUG("timestamp: %u, low %u (0x%x), high %u (0x%x)",
+	      (uint32_t)(yksoft.tok.tstpl | (yksoft.tok.tstph << 16)),
+	      yksoft.tok.tstpl, yksoft.tok.tstpl,
+	      yksoft.tok.tstph, yksoft.tok.tstph);
+	DEBUG("random: %u (0x%x)", yksoft.tok.rnd, yksoft.tok.rnd);
+	DEBUG("crc: %u (0x%x)", yksoft.tok.crc, yksoft.tok.crc);
+	DEBUG("");
 
 	yubikey_modhex_encode(otp, (char const *)yksoft.public_id, sizeof(yksoft.public_id));
 	yubikey_generate((void *)&yksoft.tok, yksoft.aes_key, otp + (YUBIKEY_UID_SIZE * 2));
 
 	DEBUG("OTP token");
 	DEBUG("===");
-	fflush(stderr); /* So stdout/stderr don't get interleaved */
   	fprintf(stdout, "%s\n", otp);
 
 	EXIT_WITH_SUCCESS;
