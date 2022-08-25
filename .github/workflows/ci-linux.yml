@@ -18,8 +18,8 @@ jobs:
     - name: Build yksoft
       run: make 
     - name: Run yksoft (init)
-      run: test $(./yksoft not_a_physical_token | wc -c) -eq 44
+      run: test $(./yksoft not_a_physical_token | grep aes_key_hex | cut -d ' ' -f 2 | wc -c) -eq 33
     - name: Run yksoft (next)
-      run: test $(./yksoft not_a_physical_token | wc -c) -eq 44
+      run: test $(./yksoft not_a_physical_token | wc -c) -eq 45
     - name: Parse OTP with ykparse
       run: ykparse $(./yksoft -r not_a_physical_token | grep aes_key_hex | cut -d ' ' -f 2) $(./yksoft not_a_physical_token)
