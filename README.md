@@ -1,4 +1,8 @@
-# Emulates a physical yubikey token in HOTP mode
+# yksoft
+
+[![CI build status][BuildStatus]][BuildStatusLink]
+
+## Introduction
 
 Sometimes it's useful to emulate a physical Yubikey token in software, examples of this include:
 
@@ -143,3 +147,5 @@ Keypairs
 
 If any of these keys are not found in the persistence file, their value will be treated as 0.
 
+[BuildStatus]: https://github.com/arr2036/yksoft/actions/workflows/ci-linux.yml/badge.svg "CI status"
+[BuildStatusLink]: https://github.com/arr2036/yksoft/actions/workflows/ci-linux.yml
