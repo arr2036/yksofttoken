@@ -82,7 +82,7 @@ typedef struct {
 	((uint64_t)_bin[4] << 8) | \
 	_bin[5])
 
-int persistent_file_write(int dir_fd, char const *path, yksoft_t const *in)
+int persistent_file_write(int token_dir_fd, char const *token_dir, char const *path, yksoft_t const *in)
 {
 	FILE		*persist;
 	int		persist_fd;
@@ -95,10 +95,10 @@ int persistent_file_write(int dir_fd, char const *path, yksoft_t const *in)
 
 	umask(S_IRWXG | S_IRWXO);
 
-	persist_fd = openat(dir_fd, path, O_RDWR | O_CREAT);
+	persist_fd = openat(token_dir_fd, path, O_RDWR | O_CREAT);
 	if (persist_fd < 0) {
 	open_failed:
-		ERROR("Failed opening persistance file \"%s\": %s", path, strerror(errno));
+		ERROR("Failed opening persistance file \"%s/%s\": %s", token_dir, path, strerror(errno));
 		return -1;
 	}
 
@@ -108,7 +108,7 @@ int persistent_file_write(int dir_fd, char const *path, yksoft_t const *in)
 	}
 
 	if (flock(persist_fd, LOCK_EX) < 0) {
-		ERROR("Failed locking persistence file \"%s\": %s", path, strerror(errno));
+		ERROR("Failed locking persistence file \"%s/%s\": %s", token_dir, path, strerror(errno));
 	error:
 		fclose(persist);
 		close(persist_fd);
@@ -125,7 +125,7 @@ do { \
 	DEBUG(_fmt, ##__VA_ARGS__); \
 } while(0)
 
-	DEBUG("Persisting data to \"%s\"", path);
+	DEBUG("Persisting data to \"%s/%s\"", token_dir, path);
 	DEBUG("===");
 	WRITE("public_id: %s", public_id_modhex);
 	WRITE("private_id: %s", private_id_hex);
@@ -144,7 +144,7 @@ do { \
 #else
 	if (ftruncate(fileno(persist), pos) < 0) {
 #endif
-		ERROR("Failed truncating persistence file: %s", strerror(errno));
+		ERROR("Failed truncating persistence file \"%s/%s\": %s", token_dir, path, strerror(errno));
 		goto error;
 	}
 	fclose(persist);	/* Releases the lock too */
@@ -263,7 +263,7 @@ again:
 	return 0;
 }
 
-int persistent_data_load(yksoft_t *out, int dir_fd, char const *path)
+int persistent_data_load(yksoft_t *out, int token_dir_fd, char const *token_dir, char const *path)
 {
 	int			persist_fd;
 	FILE			*persist;
@@ -271,24 +271,24 @@ int persistent_data_load(yksoft_t *out, int dir_fd, char const *path)
 	char			key[12];
 	unsigned long long	num;
 
-	persist_fd = openat(dir_fd, path, O_RDONLY);
+	persist_fd = openat(token_dir_fd, path, O_RDONLY);
 	if (persist_fd < 0) {
 	open_failed:
-		ERROR("Failed opening persistance file \"%s\": %s", path, strerror(errno));
+		ERROR("Failed opening persistance file \"%s/%s\": %s", token_dir, path, strerror(errno));
 		return -1;
 	}
 
 	if (!(persist = fdopen(persist_fd, "r"))) goto open_failed;
 
 	if (flock(persist_fd, LOCK_EX) < 0) {
-		ERROR("Failed locking persistence file \"%s\": %s", path, strerror(errno));
+		ERROR("Failed locking persistence file \"%s/%s\": %s", token_dir, path, strerror(errno));
 	error:
 		close(persist_fd);
 		fclose(persist);
 		return -1;
 	}
 
-	DEBUG("Reading persisted data from \"%s\"", path);
+	DEBUG("Reading persisted data from \"%s/%s\"", token_dir, path);
 	DEBUG("===");
 
 	while (fgets(buff, sizeof(buff), persist)) {
@@ -412,7 +412,7 @@ int persistent_data_load(yksoft_t *out, int dir_fd, char const *path)
 		}
 	}
 	if (((errno = ferror(persist)) != 0) || (feof(persist) == 0)) {
-		ERROR("Failed reading from \"%s\": %s", path, strerror(errno));
+		ERROR("Failed reading from \"%s/%s\": %s", token_dir, path, strerror(errno));
 		goto error;
 	}
 	fclose(persist);
@@ -572,7 +572,6 @@ int main(int argc, char *argv[])
 		token_dir = token_dir_exp;
 	}
 
-	DEBUG("Opening persistence directory \"%s\"", token_dir);
 	dir_fd = open(token_dir, O_RDONLY | O_DIRECTORY);
 	if (dir_fd < 0) {
 		if (errno != ENOENT) {
@@ -600,7 +599,7 @@ int main(int argc, char *argv[])
 			EXIT_WITH_FAILURE;
 		}
 
-		if (persistent_data_load(&yksoft, dir_fd, file) < 0) EXIT_WITH_FAILURE;
+		if (persistent_data_load(&yksoft, dir_fd, token_dir, file) < 0) EXIT_WITH_FAILURE;
 		if (persistent_data_update(&yksoft) < 0) EXIT_WITH_FAILURE;
 
 		if (got_public_id) {
@@ -632,7 +631,7 @@ int main(int argc, char *argv[])
 			yksoft.tok.ctr = counter;
 		}
 
-		if (!show_registration_info && (persistent_file_write(dir_fd, file, &yksoft) < 0)) EXIT_WITH_FAILURE;
+		if (!show_registration_info && (persistent_file_write(dir_fd, token_dir, file, &yksoft) < 0)) EXIT_WITH_FAILURE;
 	} else {
 		if (persistent_data_generate(&yksoft,
 					     got_public_id ? public_id : NULL,
@@ -644,7 +643,7 @@ int main(int argc, char *argv[])
 		 *	New token, print out the identifier and aes_key
 		 */
 		show_registration_info = true;
-		if (persistent_file_write(dir_fd, file, &yksoft) < 0) EXIT_WITH_FAILURE;
+		if (persistent_file_write(dir_fd, token_dir, file, &yksoft) < 0) EXIT_WITH_FAILURE;
 	}
 
 	if (show_registration_info) {
