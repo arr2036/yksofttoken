@@ -101,7 +101,7 @@ The value passed in via `-c` is always incremented by 1, to "reset" the session 
 
 ## Time
 
-A hardware Yubikey has an 8hz timer that runs whenever the key is powered on.
+A hardware based Yubikey has an 8hz timer that runs whenever the key is powered on.
 This lets the authenticator detect out of order uses of tokens.
 
 In a hardware token, the initial timer value is set to a random value when the token
