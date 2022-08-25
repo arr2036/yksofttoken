@@ -50,6 +50,10 @@
 #include <time.h>
 #include <unistd.h>
 
+#ifdef __linux__
+#  include <bsd/stdlib.h>
+#endif
+
 static bool debug = false;
 static char const *prog;
 

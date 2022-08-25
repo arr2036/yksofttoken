@@ -23,8 +23,7 @@ high security, this utility is no where near as secure as a proper physical key.
 
 yksoft has a single 3rd party dependency which is `libyubikey`.
 
-yksoft also requires the `arc4random` functions be provided by the standard library,
-which they are on most Linuxes and BSDs.
+yksoft also requires the `arc4random` functions be provided by the standard library.
 
 ### macos
 
@@ -33,17 +32,17 @@ brew install libyubikey
 make
 ```
 
-### debian/ubuntu
+### Debian/Ubuntu
 
 ```bash
-sudo apt-get install libyubikey-dev
+sudo apt-get install libyubikey-dev libbsd-dev
 make
 ```
 
 ### RHEL/Rocky etc...
 
 ```bash
-yum install libyubikey-devel
+yum install libyubikey-devel libbsd-devel
 make
 ```
 
