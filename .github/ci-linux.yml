@@ -1,0 +1,13 @@
+jobs:
+  linux-build-and-run:
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install other build deps
+      run:  sudo apt-get install -y libyubikey-dev libbsd-dev
+    - name: Build yksoft
+      run: make 
+    - name: Run yksoft
+      run: ./yksoft not_a_physical_token
