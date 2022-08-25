@@ -21,7 +21,7 @@ pieces that are needed to properly emulate a hardware token.
 **NOTE**
 
 yksoft is not intended to be a replacement for a Yubikey in situations that require
-high security, this utility is not as secure as a proper physical key.
+high security, this utility is not as secure as a physical Yubikey.
 
 ## Building
 
