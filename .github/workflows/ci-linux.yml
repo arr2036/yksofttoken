@@ -3,9 +3,17 @@ on:
   push:
     branches:
       - master
+    paths:
+      - 'Makefile'
+      - '*.c'
+      - '.github/workflows/ci-linux.yml'
   pull_request:
     branches:
       - master
+    paths:
+      - 'Makefile'
+      - '*.c'
+      - '.github/workflows/ci-linux.yml'
 jobs:
   linux-build-and-run:
     strategy:
