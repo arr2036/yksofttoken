@@ -618,6 +618,7 @@ int main(int argc, char *argv[])
 
 	DEBUG("OTP token");
 	DEBUG("===");
+	fflush(stderr); /* So stdout/stderr don't get interleaved */
   	fprintf(stdout, "%s\n", otp);
 
 	EXIT_WITH_SUCCESS;
