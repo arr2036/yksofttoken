@@ -6,7 +6,7 @@
 
 Sometimes it's useful to emulate a physical Yubikey token in software, examples of this include:
 
-- testing, where you don't want to purchase a Yubikey.
+- Testing, where you don't want to purchase a Yubikey.
 - M2M VPN connections where the other party is unable to make an exception to
   their 2FA policy.
 - Particularly difficult customers who want to treat everyone in your organisation as
