@@ -86,9 +86,9 @@ If you need to see the registration information again, either cat the persistenc
 
 ## Emulating an existing physical token
 
-If the public identity, private identity, and AES key of an existing token are known
-they can be passed in via `-I <modhex>`, `-i <hex>`, `-k <hex>` and `-c <uint>`
-respectively.
+If the public identity, private identity, AES key, and counter of an existing token 
+are known they can be passed in via `-I <modhex>`, `-i <hex>`, `-k <hex>` and 
+`-c <uint>` respectively.
 
 These values will be written to the persitence file instead of random values being used.
 
