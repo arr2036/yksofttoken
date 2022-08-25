@@ -53,7 +53,7 @@ make
 
 yksoft by default will search in `~/.yksoft` for a token persistence file `default`.
 If this file is not found, a new public id, private id, and AES key is generated and
-written to the `~/.yksoft/default` along with various timestamps and counters.
+written to `~/.yksoft/default` along with various timestamps and counters.
 
 The token persistence file is not encrypted in any way, and you should ensure that
 permissions on it are set correctly, i.e. NOT world readable/writable.  yksoft will
