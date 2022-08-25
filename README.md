@@ -63,7 +63,7 @@ When the token persistence file is created, data needed to register the soft tok
 with an authentication server is written to stdout and no OTP is produced.
 
 ```bash
-> yksoft not_a_physical_token
+> yksoft
 public_id_modhex: ddddjkdcungg
 public_id_hex: 22228920eb55
 public_id_dec: 37531724868437
@@ -77,14 +77,15 @@ Subsequent calls (where the token persistence file exists) will write an OTP to
 stdout.
 
 ```bash
-> yksoft not_a_physical_token
+> yksoft
 ddddjkdcunggjfnkgjedvntebkukhejnbffchurkgruc
 ```
 
 If you need to see the registration information again, either cat the persistence file
 (it's there as plaintext), or pass the `-r` flag.
 
-## Emulating an existing physical token
+## Usage patterns
+### Emulating an existing physical token
 
 If the public identity, private identity, AES key, and counter of an existing token 
 are known they can be passed in via `-I <modhex>`, `-i <hex>`, `-k <hex>` and 
@@ -94,13 +95,13 @@ These values will be written to the persitence file instead of random values bei
 
 The value passed in via `-c` is always incremented by 1, to "reset" the session count.
 
-## Public ID prefixes
+### Public ID prefixes
 
 Where a public identity is specified with `-I` any identity bytes not provided on the 
 command line, will be filled with random bytes.  Passing `-I frfr` for example, would 
 produce a public identity with a `frfr` prefix e.g. `frfrttuhdgvb`.
 
-## Using multiple tokens
+### Using multiple tokens
 
 The final parameter passed to yksoft determines the name of the token file used.
 
@@ -116,7 +117,15 @@ The default token directory may be altered with the `-f` argument.
 # Loads persistence data from /tmp/foo
 ```
 
-## Time
+### Logging
+
+For robustness when calling yksoft from a VPN client, debugging output goes to stderr, 
+only the OTP token and registration information is written to stdout.
+
+Debug logging may be enabled with `-d`.
+
+## Technical details
+### Time
 
 A hardware based Yubikey has an 8hz timer that runs whenever the key is powered on.
 This lets the authenticator detect out of order uses of tokens.
@@ -138,14 +147,7 @@ When `lastuse` is no longer equal to `time()`, the sub-second use counter is res
 
 If the sub-second use counter reaches 7, we sleep for one second before generating the OTP.
 
-## Logging
-
-For robustness when calling yksoft from a VPN client, debugging output goes to stderr, 
-only the OTP token and registration information is written to stdout.
-
-Debug logging may be enabled with `-d`.
-
-## Anatomy of a persistence file
+### Anatomy of a persistence file
 
 The persistence file consists of key/value pairs separated by `: `, terminated by `\n`.
 
