@@ -51,9 +51,9 @@ make
 
 ## First use
 
-yksoft only needs a single parameter, which is the path to the token persistence file.
+yksoft by default will search in `~/.yksoft` for a token persistence file `default`.
 If this file is not found, a new public id, private id, and AES key is generated and
-written to the persistence file along with various timestamps and counters.
+written to the `~/.yksoft/default` along with various timestamps and counters.
 
 The token persistence file is not encrypted in any way, and you should ensure that
 permissions on it are set correctly, i.e. NOT world readable/writable.  yksoft will
@@ -99,6 +99,22 @@ The value passed in via `-c` is always incremented by 1, to "reset" the session 
 Where a public identity is specified with `-I` any identity bytes not provided on the 
 command line, will be filled with random bytes.  Passing `-I frfr` for example, would 
 produce a public identity with a `frfr` prefix e.g. `frfrttuhdgvb`.
+
+## Using multiple tokens
+
+The final parameter passed to yksoft determines the name of the token file used.
+
+```bash
+> yksoft foo
+# Loads token persistence data from ~/.yksoft/foo
+```
+
+The default token directory may be altered with the `-f` argument.
+
+```bash
+> yksoft -f /tmp/ foo
+# Loads persistence data from /tmp/foo
+```
 
 ## Time
 

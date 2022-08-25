@@ -56,6 +56,8 @@
 
 static bool debug = false;
 static char const *prog;
+static char const *default_token_dir = ".yksoft";
+
 
 #define ERROR(_fmt, ...) fprintf(stderr, _fmt "\n", ## __VA_ARGS__)
 #define INFO(_fmt, ...) fprintf(stdout, _fmt "\n", ## __VA_ARGS__)
@@ -80,25 +82,36 @@ typedef struct {
 	((uint64_t)_bin[4] << 8) | \
 	_bin[5])
 
-int persistent_file_write(char const *path, yksoft_t const *in)
+int persistent_file_write(int dir_fd, char const *path, yksoft_t const *in)
 {
+	FILE		*persist;
+	int		persist_fd;
+
 	char		public_id_modhex[(sizeof(in->public_id) * 2) + 1];
 	char		private_id_hex[(sizeof(in->tok.uid) * 2) + 1];
 	char		aes_key_hex[(sizeof(in->aes_key) * 2) + 1];
-	FILE		*persist;
+
 	fpos_t		pos;
 
 	umask(S_IRWXG | S_IRWXO);
 
-	if (!(persist = fopen(path, "w"))) {
-		ERROR("Failed opening persistance file: %s", strerror(errno));
+	persist_fd = openat(dir_fd, path, O_RDWR | O_CREAT);
+	if (persist_fd < 0) {
+	open_failed:
+		ERROR("Failed opening persistance file \"%s\": %s", path, strerror(errno));
 		return -1;
 	}
 
-	if (flock(fileno(persist), LOCK_EX) < 0) {
-		ERROR("Failed locking persistence file: %s", strerror(errno));
-	close:
+	if (!(persist = fdopen(persist_fd, "w"))) {
+		close(persist_fd);
+		goto open_failed;
+	}
+
+	if (flock(persist_fd, LOCK_EX) < 0) {
+		ERROR("Failed locking persistence file \"%s\": %s", path, strerror(errno));
+	error:
 		fclose(persist);
+		close(persist_fd);
 		return -1;
 	}
 
@@ -132,9 +145,10 @@ do { \
 	if (ftruncate(fileno(persist), pos) < 0) {
 #endif
 		ERROR("Failed truncating persistence file: %s", strerror(errno));
-		goto close;
+		goto error;
 	}
 	fclose(persist);	/* Releases the lock too */
+	close(persist_fd);
 
 	return 0;
 }
@@ -249,21 +263,27 @@ again:
 	return 0;
 }
 
-int persistent_data_load(yksoft_t *out, char const *path)
+int persistent_data_load(yksoft_t *out, int dir_fd, char const *path)
 {
+	int			persist_fd;
 	FILE			*persist;
 	char			buff[256];
 	char			key[12];
 	unsigned long long	num;
 
-	if (!(persist = fopen(path, "r"))) {
-		ERROR("Failed opening persistance file: %s", strerror(errno));
+	persist_fd = openat(dir_fd, path, O_RDONLY);
+	if (persist_fd < 0) {
+	open_failed:
+		ERROR("Failed opening persistance file \"%s\": %s", path, strerror(errno));
 		return -1;
 	}
 
-	if (flock(fileno(persist), LOCK_EX) < 0) {
-		ERROR("Failed locking persistence file: %s", strerror(errno));
+	if (!(persist = fdopen(persist_fd, "r"))) goto open_failed;
+
+	if (flock(persist_fd, LOCK_EX) < 0) {
+		ERROR("Failed locking persistence file \"%s\": %s", path, strerror(errno));
 	error:
+		close(persist_fd);
 		fclose(persist);
 		return -1;
 	}
@@ -396,13 +416,16 @@ int persistent_data_load(yksoft_t *out, char const *path)
 		goto error;
 	}
 	fclose(persist);
+	close(persist_fd);
 	DEBUG("");
 
 	return 0;
 }
 static __attribute__((noreturn)) void usage(int ret)
 {
-	INFO("usage: %s [options] <token file>\n", prog);
+	INFO("usage: %s [options] [<token file>]\n", prog);
+	INFO("  -c <counter>     Counter for initialisation (0-32766).  Will always be incremented by one on first use.");
+	INFO("                   Defaults to 0.");
 	INFO("  -I <public_id>   Public ID as MODHEX to use for initialisation (max 6 bytes i.e. 12 modhexits).");
 	INFO("                   If the Public ID is < 6 bytes, the remaining bytes will be randomised.");
 	INFO("                   Defaults to dddd<4 byte random>.");
@@ -410,9 +433,11 @@ static __attribute__((noreturn)) void usage(int ret)
 	INFO("                   Defaults to <6 byte random>.");
 	INFO("  -k <key>         AES key as HEX to use for initialisation (16 bytes i.e. 32 hexits).");
 	INFO("                   Defaults to <16 byte random>.");
-	INFO("  -c <counter>     Counter for initialisation (0-32766).  Will always be incremented by one on first use.");
-	INFO("                   Defaults to 0.");
-	INFO("  -r               Prints out registration information to stderr.");
+	INFO("  -d               Turns on debug logging to stderr.");
+	INFO("  -f               Specify the directory tokens are stored in.");
+	INFO("                   Defaults to \"~/%s\"", default_token_dir);
+	INFO("  -r               Prints out registration information to stdout. An OTP will not be generated.");
+	INFO("  -R               Regenerate the specified token.");
 	INFO("  -h               This help text.");
 	INFO("");
 	INFO("Emulate a hardware yubikey token in HOTP mode.");
@@ -429,6 +454,10 @@ int main(int argc, char *argv[])
 	char const	*file;
   	char		c;
   	struct stat	pstat;
+  	char const	*token_dir = NULL;
+  	char		token_dir_exp[PATH_MAX + 1];
+
+	int		dir_fd = -1;
 
   	/*
   	 *	Initialisation values
@@ -443,12 +472,26 @@ int main(int argc, char *argv[])
 	uint8_t		aes_key[YUBIKEY_KEY_SIZE];
 	bool		got_aes_key = false;
 	bool		show_registration_info = false;
+	bool		regenerate = false;
 
 	prog = argv[0];
 
 	memset(&yksoft, 0, sizeof(yksoft));
 
-	while ((c = getopt(argc, argv, "I:i:k:c:drh")) != -1) switch (c) {
+	while ((c = getopt(argc, argv, "c:df:I:i:k:rRh")) != -1) switch (c) {
+		case 'c':
+			counter = strtol((char *)optarg, NULL, 0);
+			got_counter = true;
+			break;
+
+		case 'd':
+			debug = true;
+			break;
+
+		case 'f':
+			token_dir = optarg;
+			break;
+
 		/* Public ID */
 		case 'I':
 		{
@@ -497,17 +540,13 @@ int main(int argc, char *argv[])
 			got_aes_key = true;
 			break;
 
-		case 'c':
-			counter = strtol((char *)optarg, NULL, 0);
-			got_counter = true;
-			break;
-
-		case 'd':
-			debug = true;
-			break;
 
 		case 'r':
 			show_registration_info = true;
+			break;
+
+		case 'R':
+			regenerate = true;
 			break;
 
 		case 'h':
@@ -518,20 +557,50 @@ int main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	if (argc == 0) {
-		ERROR("Need persistence file to operate on");
-		usage(64);
-	};
+	/*
+	 *	Default to "default" for the token name
+	 */
 	file = argv[0];
+	if (!file) file = "default";
 
-	if (stat(file, &pstat) == 0) {
+	/*
+	 *	By default our default dir is relative
+	 *	to the home directory of the user...
+	 */
+	if (!token_dir) {
+		snprintf(token_dir_exp, sizeof(token_dir_exp), "%s/%s", getenv("HOME"), default_token_dir);
+		token_dir = token_dir_exp;
+	}
+
+	DEBUG("Opening persistence directory \"%s\"", token_dir);
+	dir_fd = open(token_dir, O_RDONLY | O_DIRECTORY);
+	if (dir_fd < 0) {
+		if (errno != ENOENT) {
+			ERROR("Cannot open token directory \"%s\": %s", token_dir, strerror(errno));
+			EXIT_WITH_FAILURE;
+		}
+		dir_fd = mkdir(token_dir, S_IRWXU);
+		if (dir_fd < 0) {
+			ERROR("Cannot create token directory \"%s\": %s", token_dir, strerror(errno));
+			EXIT_WITH_FAILURE;
+		}
+
+		dir_fd = open(token_dir, O_RDONLY | O_DIRECTORY);
+		if (dir_fd < 0) {
+			ERROR("Failed opening the token directory we just created \"%s\": %s",
+			      token_dir, strerror(errno));
+			EXIT_WITH_FAILURE;
+		}
+	}
+
+	if (!regenerate && (fstatat(dir_fd, file, &pstat, 0) == 0)) {
 		if (pstat.st_mode & (S_IROTH | S_IWOTH)) {
 			ERROR("Persistence file must NOT be world readable or world writable,  "
 			      "`chmod o-wr %s`.", file);
 			EXIT_WITH_FAILURE;
 		}
 
-		if (persistent_data_load(&yksoft, file) < 0) EXIT_WITH_FAILURE;
+		if (persistent_data_load(&yksoft, dir_fd, file) < 0) EXIT_WITH_FAILURE;
 		if (persistent_data_update(&yksoft) < 0) EXIT_WITH_FAILURE;
 
 		if (got_public_id) {
@@ -563,7 +632,7 @@ int main(int argc, char *argv[])
 			yksoft.tok.ctr = counter;
 		}
 
-		if (!show_registration_info && (persistent_file_write(file, &yksoft) < 0)) EXIT_WITH_FAILURE;
+		if (!show_registration_info && (persistent_file_write(dir_fd, file, &yksoft) < 0)) EXIT_WITH_FAILURE;
 	} else {
 		if (persistent_data_generate(&yksoft,
 					     got_public_id ? public_id : NULL,
@@ -575,7 +644,7 @@ int main(int argc, char *argv[])
 		 *	New token, print out the identifier and aes_key
 		 */
 		show_registration_info = true;
-		if (persistent_file_write(file, &yksoft) < 0) EXIT_WITH_FAILURE;
+		if (persistent_file_write(dir_fd, file, &yksoft) < 0) EXIT_WITH_FAILURE;
 	}
 
 	if (show_registration_info) {
