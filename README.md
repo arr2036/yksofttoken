@@ -107,8 +107,8 @@ is powered on. As yksoft is never "powered off", we pick a new random timer valu
 (`ponrand`) whenever the use counter is incremented by one (i.e. when the session
 counter wraps).
 
-We calculate time as `(((time() - created) * 8) + ponrandom) % 0xffffff`.
-Where `ponrandom` is 28 bits of randomness, and 4bits of sub-second use counter.
+We calculate time as `(((time() - created) * 8) + ponrandom) % 0xffffff`,
+where `ponrandom` is 28 bits of randomness, and 4bits of sub-second use counter.
 
 `time()` and friends only have a resolution of seconds, and accessing the high resolution
 functions on various platforms is a pain. To allow multiple token codes to be generated
@@ -136,7 +136,7 @@ Keypairs
 |--------------|----------|---------|------------------------------------------------------------------------|
 | `public_id`  | modhex   | 12      | Public ID prepended to the OTP.                                        |
 | `private_id` | hex      | 12      | Private ID used to validate the OTP.                                   |
-| `aes_key`    | hex      | 32      | Key used to encrypted Private ID and other fields.                     |
+| `aes_key`    | hex      | 32      | Key used to encrypt the Private ID and other fields.                   |
 | `counter`    | uint15   |         | Usage counter used to track power on events and session counter wraps. |
 | `session`    | uint8    |         | How many OTPs we've generated since `counter` was last incremented.    |
 | `created`    | time_t   |         | Unix timestamp indicating when the token was initialised.              |
