@@ -92,11 +92,13 @@ respectively.
 
 These values will be written to the persitence file instead of random values being used.
 
-In the case of the public identity any bytes not provided on the command line, will be
-filled with random bytes.  Passing `-I frfr` for example, would produce a public identity
-with a `frfr` prefix e.g. `frfrttuhdgvb`.
-
 The value passed in via `-c` is always incremented by 1, to "reset" the session count.
+
+## Public ID prefixes
+
+Where a public identity is specified with `-I` any identity bytes not provided on the 
+command line, will be filled with random bytes.  Passing `-I frfr` for example, would 
+produce a public identity with a `frfr` prefix e.g. `frfrttuhdgvb`.
 
 ## Time
 
