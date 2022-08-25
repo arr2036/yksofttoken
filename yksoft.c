@@ -126,7 +126,7 @@ do { \
 
 	fgetpos(persist, &pos);
 
-	if (ftruncate(fileno(persist), pos) < 0) {
+	if (ftruncate(fileno(persist), (size_t)pos) < 0) {
 		ERROR("Failed truncating persistence file: %s", strerror(errno));
 		goto close;
 	}
@@ -314,7 +314,7 @@ int persistent_data_load(yksoft_t *out, char const *path)
 			out->lastuse = (time_t)num;
 			if (out->lastuse > now) {
 				ERROR("lastuse time travel detected, refusing to generated token for %"PRIu64"s",
-				      out->lastuse - num);
+				      (uint64_t)(out->lastuse - num));
 				goto error;
 			}
 
