@@ -126,7 +126,11 @@ do { \
 
 	fgetpos(persist, &pos);
 
-	if (ftruncate(fileno(persist), (size_t)pos) < 0) {
+#ifdef __linux__
+	if (ftruncate(fileno(persist), pos.__pos) < 0) {
+#else
+	if (ftruncate(fileno(persist), pos) < 0) {
+#endif
 		ERROR("Failed truncating persistence file: %s", strerror(errno));
 		goto close;
 	}
