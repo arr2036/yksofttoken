@@ -1,4 +1,4 @@
-/* ykchub.c --- A software implementation of a Yubikey hardware token
+/* yksoft.c --- A software implementation of a Yubikey hardware token
  *
  * Emulates a basic Yubikey token in HOTP mode, using the yubikey library
  *
