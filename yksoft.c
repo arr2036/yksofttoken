@@ -600,7 +600,6 @@ int main(int argc, char *argv[])
 		}
 
 		if (persistent_data_load(&yksoft, dir_fd, token_dir, file) < 0) EXIT_WITH_FAILURE;
-		if (persistent_data_update(&yksoft) < 0) EXIT_WITH_FAILURE;
 
 		if (got_public_id) {
 			if (memcmp(public_id, yksoft.public_id, public_id_len) != 0) {
@@ -631,7 +630,10 @@ int main(int argc, char *argv[])
 			yksoft.tok.ctr = counter;
 		}
 
-		if (!show_registration_info && (persistent_file_write(dir_fd, token_dir, file, &yksoft) < 0)) EXIT_WITH_FAILURE;
+		if (!show_registration_info) {
+			if (persistent_data_update(&yksoft) < 0) EXIT_WITH_FAILURE;
+			if (persistent_file_write(dir_fd, token_dir, file, &yksoft) < 0) EXIT_WITH_FAILURE;
+		}
 	} else {
 		if (persistent_data_generate(&yksoft,
 					     got_public_id ? public_id : NULL,
@@ -654,8 +656,8 @@ int main(int argc, char *argv[])
 		char	aes_key_hex[(sizeof(yksoft.aes_key) * 2) + 1];
 
 		yubikey_modhex_encode(public_id_modhex, (char const *)yksoft.public_id, sizeof(yksoft.public_id));
-		yubikey_modhex_encode(private_id_modhex, (char const *)yksoft.tok.uid, sizeof(yksoft.tok.uid));
-		yubikey_hex_encode(public_id_hex, (char const *)yksoft.public_id, sizeof(yksoft.public_id));
+		if (debug) yubikey_modhex_encode(private_id_modhex, (char const *)yksoft.tok.uid, sizeof(yksoft.tok.uid));
+		if (debug) yubikey_hex_encode(public_id_hex, (char const *)yksoft.public_id, sizeof(yksoft.public_id));
 		yubikey_hex_encode(private_id_hex, (char const *)yksoft.tok.uid, sizeof(yksoft.tok.uid));
 		yubikey_hex_encode(aes_key_hex, (char const *)yksoft.aes_key, sizeof(yksoft.aes_key));
 
@@ -691,7 +693,7 @@ int main(int argc, char *argv[])
 
 	DEBUG("OTP token");
 	DEBUG("===");
-  	fprintf(stdout, "%s\n", otp);
+  	INFO("%s", otp);
 
 	EXIT_WITH_SUCCESS;
 }
