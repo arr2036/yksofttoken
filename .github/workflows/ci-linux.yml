@@ -26,10 +26,10 @@ jobs:
     - name: Build yksoft
       run: make 
     - name: Run yksoft (init)
-      run: test $(./yksoft -f /tmp/yksoft not_a_physical_token | grep aes_key_hex | cut -d ' ' -f 2 | wc -c) -eq 33; ls -l /tmp/yksoft
+      run: test $(./yksoft -f /tmp/yksoft not_a_physical_token | cut -d ',' -f 3 | tr -d '[:space:]' | wc -c) -eq 32; ls -l /tmp/yksoft
     - name: Examine token
       run: cat /tmp/yksoft/not_a_physical_token
     - name: Run yksoft (next)
-      run: test $(./yksoft -f /tmp/yksoft not_a_physical_token | wc -c) -eq 45
+      run: test $(./yksoft -f /tmp/yksoft not_a_physical_token | tr -d '[:space:]' | wc -c) -eq 44
     - name: Parse OTP with ykparse
-      run: ykparse $(./yksoft -f /tmp/yksoft -r not_a_physical_token | grep aes_key_hex | cut -d ' ' -f 2) $(./yksoft -f /tmp/yksoft not_a_physical_token)
+      run: ykparse $(./yksoft -f /tmp/yksoft -r not_a_physical_token | cut -d ',' -f 3 | tr -d '[:space:]') $(./yksoft -f /tmp/yksoft not_a_physical_token)

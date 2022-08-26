@@ -661,13 +661,14 @@ int main(int argc, char *argv[])
 
 		DEBUG("Registration information");
 		DEBUG("===");
-		INFO("public_id_modhex: %s", public_id_modhex);
-		INFO("public_id_hex: %s", public_id_hex);
-		INFO("public_id_dec: %" PRIu64, nbo_48(yksoft.public_id));
-		INFO("private_id_modhex: %s", private_id_modhex);
-		INFO("private_id_hex: %s", private_id_hex);
-		INFO("private_id_dec: %" PRIu64, nbo_48(yksoft.tok.uid));
-		INFO("aes_key_hex: %s", aes_key_hex);
+		DEBUG("public_id_modhex: %s", public_id_modhex);
+		DEBUG("public_id_hex: %s", public_id_hex);
+		DEBUG("public_id_dec: %" PRIu64, nbo_48(yksoft.public_id));
+		DEBUG("private_id_modhex: %s", private_id_modhex);
+		DEBUG("private_id_hex: %s", private_id_hex);
+		DEBUG("private_id_dec: %" PRIu64, nbo_48(yksoft.tok.uid));
+		DEBUG("aes_key_hex: %s", aes_key_hex);
+		INFO("%s, %s, %s", public_id_modhex, private_id_hex, aes_key_hex);
 		DEBUG("");
 
 		EXIT_WITH_SUCCESS;

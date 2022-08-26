@@ -64,13 +64,7 @@ with an authentication server is written to stdout and no OTP is produced.
 
 ```bash
 > yksoft
-public_id_modhex: ddddjkdcungg
-public_id_hex: 22228920eb55
-public_id_dec: 37531724868437
-private_id_modhex: bclcegdnhdvn
-private_id_hex: 10a0352b62fb
-private_id_dec: 18280272847611
-aes_key_hex: 622708a469ece555bd1fc3ee20c3222a
+ddddjkdcungg, 10a0352b62fb, 622708a469ece555bd1fc3ee20c3222a
 ```
 
 Subsequent calls (where the token persistence file exists) will write an OTP to
