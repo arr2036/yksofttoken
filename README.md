@@ -118,6 +118,17 @@ only the OTP token and registration information is written to stdout.
 
 Debug logging may be enabled with `-d`.
 
+## Using with VPN clients
+### Openconnect
+
+The easiest way to submit both factors to openconnect is via `--password-on-stdin`.  
+In the example below we pipe in the first factor, then the output of yksoft separated
+by a newline.
+
+```bash
+(echo '<first factor>'; yksoft [<token file>]) | openconnect --user=<user> <url> --passwd-on-stdin
+```
+
 ## Technical details
 ### Time
 
