@@ -171,5 +171,5 @@ Keypairs
 
 If any of these keys are not found in the persistence file, their value will be treated as 0.
 
-[BuildStatus]: https://github.com/arr2036/yksoft/actions/workflows/ci-linux.yml/badge.svg "CI status"
-[BuildStatusLink]: https://github.com/arr2036/yksoft/actions/workflows/ci-linux.yml
+[BuildStatus]: https://github.com/arr2036/yksofttoken/actions/workflows/ci-linux.yml/badge.svg "CI status"
+[BuildStatusLink]: https://github.com/arr2036/yksofttoken/actions/workflows/ci-linux.yml
