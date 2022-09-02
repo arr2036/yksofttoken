@@ -78,8 +78,8 @@ ddddjkdcunggjfnkgjedvntebkukhejnbffchurkgruc
 If you need to see the registration information again, either cat the persistence file
 (it's there as plaintext), or pass the `-r` flag.
 
-## Usage patterns
-### Emulating an existing physical token
+## How do I...
+### Emulate an existing physical token
 
 If the public identity, private identity, AES key, and counter of an existing token 
 are known they can be passed in via `-I <modhex>`, `-i <hex>`, `-k <hex>` and 
@@ -89,13 +89,13 @@ These values will be written to the persitence file instead of random values bei
 
 The value passed in via `-c` is always incremented by 1, to "reset" the session count.
 
-### Public ID prefixes
+### Generate a public ID from a prefix
 
 Where a public identity is specified with `-I` any identity bytes not provided on the 
 command line, will be filled with random bytes.  Passing `-I frfr` for example, would 
 produce a public identity with a `frfr` prefix e.g. `frfrttuhdgvb`.
 
-### Using multiple tokens
+### Use multiple tokens
 
 The final parameter passed to yksoft determines the name of the token file used.
 
