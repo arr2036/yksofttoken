@@ -1,0 +1,41 @@
+name: Packaging debian
+on:
+  push:
+    tags:
+      - '*'
+    branches:
+      - master
+jobs:
+  deb-build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-20.04]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install build dependencies
+      run: |
+        sudo apt-get install --no-install-recommends  -y build-essential devscripts equivs quilt
+        debian/rules debian/control
+        sudo mk-build-deps -irt"apt-get -y" debian/control
+
+    - name: Build packages
+      run:  make deb
+
+    - name: Test install packages
+      run: sudo apt-get install ../*.deb
+
+    - name: Run yksoft
+      run: yksoft
+
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: ../yksofttoken*
+        tag: ${{ github.ref }}
+        overwrite: true
+        file_glob: true

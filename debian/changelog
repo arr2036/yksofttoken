@@ -4,10 +4,10 @@ yksofttoken (0.0.2-1) focal; urgency=low
 
    * Place token data in ~/.yksoft/<name> by defaul
 
- -- Arran Cudbard-Bell <a.cudbardb@freeradius.orga  Tue, 6 Sep 2022 07:21:28 +0000
+ -- Arran Cudbard-Bell <a.cudbardb@freeradius.org>  Tue, 6 Sep 2022 07:21:28 +0000
 
 yksofttoken (0.0.1-1) focal; urgency=low
 
   * initial release
 
- -- Arran Cudbard-Bell <a.cudbardb@freeradius.orga  Thu, 25 Aug 2022 13:36:00 +0000
+ -- Arran Cudbard-Bell <a.cudbardb@freeradius.org>  Thu, 25 Aug 2022 13:36:00 +0000
