@@ -3,3 +3,5 @@ yksoft
 .DS_Store
 not_a_physical_token
 example
+debian/files
+debian/tmp

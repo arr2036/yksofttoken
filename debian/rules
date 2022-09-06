@@ -1,0 +1,28 @@
+#!/usr/bin/make -f
+
+CC = $(DEB_HOST_GNU_TYPE)-gcc
+CFLAGS := `dpkg-buildflags --get CFLAGS` -Wall
+LDFLAGS := `dpkg-buildflags --get LDFLAGS`
+CPPFLAGS := `dpkg-buildflags --get CPPFLAGS`
+
+DEB_VERSION = $(shell dpkg-parsechangelog --show-field Version)
+
+clean:
+	rm -f yksoft
+	rm -rf debian/tmp
+
+build: build-arch 
+
+binary: binary-arch
+	
+build-arch:
+	$(MAKE)
+
+binary-arch:
+	rm -rf debian/tmp
+	mkdir -p debian/tmp/DEBIAN
+	dpkg-gencontrol -pyksofttoken
+	mkdir -p debian/tmp/usr/bin
+	cp yksoft debian/tmp/usr/bin
+	strip --strip-unneeded --remove-section=.comment --remove-section=.note debian/tmp/usr/bin/yksoft
+	dpkg-deb --build debian/tmp ../yksofttoken_$(DEB_VERSION)_$(DEB_TARGET_ARCH).deb
