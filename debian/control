@@ -1,0 +1,18 @@
+Source: yksofttoken
+Maintainer: Arran Cudbard-Bell <a.cudbardb@freeradius.org>
+Standards-Version: 4.5.0
+Priority: optional
+Section: utils
+
+Package: yksofttoken
+Architecture: any
+Build-Depends:
+ libyubikey-dev
+ libbsd-dev
+Depends:
+ libubikey
+ libbsd
+Description: Yubikey hardware token emulator
+ Produces HOTP One Time Passcodes in Yubikey format, roughly
+ following the behaviour of a hardware Yubikey.  Useful for
+ establishing M2M connections for VPNs which require 2FA.
