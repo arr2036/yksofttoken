@@ -199,7 +199,7 @@ int persistent_data_generate(yksoft_t *out,
 	out->tok.use = 1;				/* First "session" */
 
 	out->lastuse = out->created = time(NULL);	/* Record the token creation time */
-	out->ponrand = arc4random() & 0xfffffff0;		/* Fudge the time, so not all tokens are synced to time() */
+	out->ponrand = arc4random() & 0xfffffff0;	/* Fudge the time, so not all tokens are synced to time() */
 
 	hztime = out->ponrand;
 	hztime %= 0xffffff;	/* 24bit wrap */
