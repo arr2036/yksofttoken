@@ -57,14 +57,14 @@
 static bool debug = false;
 static char const *prog;
 
-#define PUBLIC_ID_FIELD         "public_id"
-#define PRIVATE_ID_FIELD        "private_id"
-#define AES_KEY_FIELD           "aes_key"
-#define COUNTER_FIELD           "counter"
-#define SESSION_FIELD           "session"
-#define CREATED_FIELD           "created"
-#define LASTUSE_FIELD           "lastuse"
-#define PONRAND_FIELD           "ponrand"
+#define PUBLIC_ID_FIELD		"public_id"
+#define PRIVATE_ID_FIELD	"private_id"
+#define AES_KEY_FIELD		"aes_key"
+#define COUNTER_FIELD		"counter"
+#define SESSION_FIELD		"session"
+#define CREATED_FIELD		"created"
+#define LASTUSE_FIELD		"lastuse"
+#define PONRAND_FIELD		"ponrand"
 
 #define ERROR(_fmt, ...) fprintf(stderr, _fmt "\n", ## __VA_ARGS__)
 #define INFO(_fmt, ...) fprintf(stdout, _fmt "\n", ## __VA_ARGS__)
@@ -212,92 +212,92 @@ int persistent_data_generate(yksoft_t *out,
 
 int persistent_data_exec(yksoft_t *in, char const *cmd)
 {
-        char public_id[sizeof(PUBLIC_ID_FIELD) + 1 + (sizeof(in->public_id) * 2)];
-        char private_id[sizeof(PRIVATE_ID_FIELD) + 1 + (sizeof(in->tok.uid) * 2)];
-        char aes_key[sizeof(AES_KEY_FIELD) + 1 + (sizeof(in->aes_key) * 2)];
-        char counter[sizeof(COUNTER_FIELD) + 1 + (sizeof("65535") - 1)];
-        char session[sizeof(SESSION_FIELD) + 1 + (sizeof("255") - 1)];
-        char created[sizeof(CREATED_FIELD) + 1 + (sizeof("18446744073709551615") - 1)];
-        char lastuse[sizeof(LASTUSE_FIELD) + 1 + (sizeof("18446744073709551615") - 1)];
-        char ponrand[sizeof(PONRAND_FIELD) + 1 + (sizeof("4294967295") - 1)];
+	char public_id[sizeof(PUBLIC_ID_FIELD) + 1 + (sizeof(in->public_id) * 2)];
+	char private_id[sizeof(PRIVATE_ID_FIELD) + 1 + (sizeof(in->tok.uid) * 2)];
+	char aes_key[sizeof(AES_KEY_FIELD) + 1 + (sizeof(in->aes_key) * 2)];
+	char counter[sizeof(COUNTER_FIELD) + 1 + (sizeof("65535") - 1)];
+	char session[sizeof(SESSION_FIELD) + 1 + (sizeof("255") - 1)];
+	char created[sizeof(CREATED_FIELD) + 1 + (sizeof("18446744073709551615") - 1)];
+	char lastuse[sizeof(LASTUSE_FIELD) + 1 + (sizeof("18446744073709551615") - 1)];
+	char ponrand[sizeof(PONRAND_FIELD) + 1 + (sizeof("4294967295") - 1)];
 
-        char public_id_modhex[(sizeof(in->public_id) * 2) + 1];
-        char private_id_hex[(sizeof(in->tok.uid) * 2) + 1];
-        char aes_key_hex[(sizeof(in->aes_key) * 2) + 1];
+	char public_id_modhex[(sizeof(in->public_id) * 2) + 1];
+	char private_id_hex[(sizeof(in->tok.uid) * 2) + 1];
+	char aes_key_hex[(sizeof(in->aes_key) * 2) + 1];
 
-        yubikey_modhex_encode(public_id_modhex, (char const *)in->public_id, sizeof(in->public_id));
-        yubikey_hex_encode(private_id_hex, (char const *)in->tok.uid, sizeof(in->tok.uid));
-        yubikey_hex_encode(aes_key_hex, (char const *)in->aes_key, sizeof(in->aes_key));
+	yubikey_modhex_encode(public_id_modhex, (char const *)in->public_id, sizeof(in->public_id));
+	yubikey_hex_encode(private_id_hex, (char const *)in->tok.uid, sizeof(in->tok.uid));
+	yubikey_hex_encode(aes_key_hex, (char const *)in->aes_key, sizeof(in->aes_key));
 
-        char const * argv[] = {
-                        "-c",
-                        cmd,
-                        NULL
-                };
-        char *envp[] = {
-                        public_id,
-                        private_id,
-                        aes_key,
-                        counter,
-                        session,
-                        created,
-                        lastuse,
-                        ponrand,
-                        NULL
-                };
-        int status;
-        pid_t pid;
-        char const *sh_path = "/bin/sh";
+	char const * argv[] = {
+			"-c",
+			cmd,
+			NULL
+		};
+	char *envp[] = {
+			public_id,
+			private_id,
+			aes_key,
+			counter,
+			session,
+			created,
+			lastuse,
+			ponrand,
+			NULL
+		};
+	int status;
+	pid_t pid;
+	char const *sh_path = "/bin/sh";
 
-        if (getenv("SHELL")) sh_path = getenv("SHELL");
+	if (getenv("SHELL")) sh_path = getenv("SHELL");
 
-        DEBUG("Calling \"%s\" to persist token information", cmd);
+	DEBUG("Calling \"%s\" to persist token information", cmd);
 
 #define SET_ENV(_buff, _fmt, ...) \
 do { \
-        snprintf(_buff, sizeof(_buff), _fmt, __VA_ARGS__); \
-        DEBUG("%s", _buff); \
+	snprintf(_buff, sizeof(_buff), _fmt, __VA_ARGS__); \
+	DEBUG("%s", _buff); \
 } while (0)
 
-        SET_ENV(public_id, PUBLIC_ID_FIELD "=%s", public_id_modhex);
-        SET_ENV(private_id, PRIVATE_ID_FIELD "=%s", private_id_hex);
-        SET_ENV(aes_key, AES_KEY_FIELD "=%s", aes_key_hex);
-        SET_ENV(counter, COUNTER_FIELD "=%u", in->tok.ctr);
-        SET_ENV(session, SESSION_FIELD "=%u", in->tok.use);
-        SET_ENV(created, CREATED_FIELD "=%" PRIu64, (uint64_t)in->created);
-        SET_ENV(lastuse, LASTUSE_FIELD "=%" PRIu64, (uint64_t)in->lastuse);
-        SET_ENV(ponrand, PONRAND_FIELD "=%u", in->ponrand);
+	SET_ENV(public_id, PUBLIC_ID_FIELD "=%s", public_id_modhex);
+	SET_ENV(private_id, PRIVATE_ID_FIELD "=%s", private_id_hex);
+	SET_ENV(aes_key, AES_KEY_FIELD "=%s", aes_key_hex);
+	SET_ENV(counter, COUNTER_FIELD "=%u", in->tok.ctr);
+	SET_ENV(session, SESSION_FIELD "=%u", in->tok.use);
+	SET_ENV(created, CREATED_FIELD "=%" PRIu64, (uint64_t)in->created);
+	SET_ENV(lastuse, LASTUSE_FIELD "=%" PRIu64, (uint64_t)in->lastuse);
+	SET_ENV(ponrand, PONRAND_FIELD "=%u", in->ponrand);
 
-        pid = fork();
-        if (pid < 0) {
-                ERROR("Failed forking persistence command \"%s\"", strerror(errno));
-                return -1;
-        } else if (pid == 0) { /* child */
-                if (execve(sh_path, (char **)((intptr_t)argv), envp) < 0) {      /* never returns on success */
-                        ERROR("Failed executing persistence command \"%s\": %s", cmd, strerror(errno));
-                        exit(EXIT_FAILURE);
-                }
-        }
+	pid = fork();
+	if (pid < 0) {
+		ERROR("Failed forking persistence command \"%s\"", strerror(errno));
+		return -1;
+	} else if (pid == 0) { /* child */
+		if (execve(sh_path, (char **)((intptr_t)argv), envp) < 0) {      /* never returns on success */
+			ERROR("Failed executing persistence command \"%s\": %s", cmd, strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+	}
 
-        /* parent */
-        if (waitpid(pid, &status, 0) < 0) {
-                ERROR("Failed waiting for persistence command: %s", strerror(errno));
-                return -1;
-        }
+	/* parent */
+	if (waitpid(pid, &status, 0) < 0) {
+		ERROR("Failed waiting for persistence command: %s", strerror(errno));
+		return -1;
+	}
 
-        if (WIFEXITED(status)) {
-                if (WEXITSTATUS(status) == 0) { /* success */
-                        DEBUG("Persistence command succeeded");
-                } else {
-                        ERROR("Persistence command failed: %u", WIFEXITED(status));
-                        return -1;
-                }
-        } else {
-                ERROR("Persistence command exited abnormally: %i", status);
-                return -1;
-        }
+	if (WIFEXITED(status)) {
+		if (WEXITSTATUS(status) == 0) { /* success */
+			DEBUG("Persistence command succeeded");
+		} else {
+			ERROR("Persistence command failed: %u", WIFEXITED(status));
+			return -1;
+		}
+	} else {
+		ERROR("Persistence command exited abnormally: %i", status);
+		return -1;
+	}
 
-        return 0;
+	return 0;
 }
 
 int persistent_data_update(yksoft_t *out)
@@ -580,9 +580,9 @@ int main(int argc, char *argv[])
 
 	prog = strrchr(argv[0], '/');
 	if (prog) {
-	        prog++;
+		prog++;
 	} else {
-	        prog = argv[0];
+		prog = argv[0];
 	}
 
 	memset(&yksoft, 0, sizeof(yksoft));
@@ -594,8 +594,8 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'C':
-		        counter_cmd = optarg;
-		        break;
+			counter_cmd = optarg;
+			break;
 
 		case 'd':
 			debug = true;
