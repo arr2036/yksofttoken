@@ -66,6 +66,9 @@ static char const *prog;
 #define LASTUSE_FIELD		"lastuse"
 #define PONRAND_FIELD		"ponrand"
 
+#define EXIT_WITH_FAILURE exit(EXIT_FAILURE)
+#define EXIT_WITH_SUCCESS exit(EXIT_SUCCESS)
+
 #define ERROR(_fmt, ...) fprintf(stderr, _fmt "\n", ## __VA_ARGS__)
 #define INFO(_fmt, ...) fprintf(stdout, _fmt "\n", ## __VA_ARGS__)
 #define DEBUG(_fmt, ...) if (debug) fprintf(stderr, _fmt "\n", ## __VA_ARGS__)
@@ -275,7 +278,7 @@ do { \
 	} else if (pid == 0) { /* child */
 		if (execve(sh_path, (char **)((intptr_t)argv), envp) < 0) {      /* never returns on success */
 			ERROR("Failed executing persistence command \"%s\": %s", cmd, strerror(errno));
-			exit(EXIT_FAILURE);
+			EXIT_WITH_FAILURE;
 		}
 	}
 
@@ -304,6 +307,7 @@ int persistent_data_update(yksoft_t *out)
 {
 	time_t		now = time(NULL);
 	uint64_t	hztime;
+	int	     ret = 0;
 
 	/*
 	 *	Too many session uses, increment the
@@ -321,6 +325,7 @@ int persistent_data_update(yksoft_t *out)
 		}
 		out->ponrand = arc4random();	/* We don't *really* need to regenerate this, but whatever */
 		out->tok.use = 1;		/* Reset session use counter */
+		ret = 1;			/* Tell the caller we wrapped */
 	} else {
 		out->tok.use++;			/* Increment the session counter */
 	}
@@ -357,7 +362,7 @@ again:
 	out->tok.tstph = (hztime >> 16) & 0xff;
 	out->tok.rnd = arc4random();
 
-	return 0;
+	return ret;
 }
 
 int persistent_data_load(yksoft_t *out, int token_dir_fd, char const *token_dir, char const *path)
@@ -535,6 +540,7 @@ static __attribute__((noreturn)) void usage(int ret)
 	INFO("  -d                      Turns on debug logging to stderr.");
 	INFO("");
 	INFO("  -f                      Specify the directory tokens are stored in.  Defaults to \"~/.%s\"", prog);
+	INFO("  -f		      Specify the directory tokens are stored in.  Defaults to \"~/.%s\"", prog);
 	INFO("");
 	INFO("  -r                      Prints out registration information to stdout. An OTP will not be generated.");
 	INFO("");
@@ -545,9 +551,6 @@ static __attribute__((noreturn)) void usage(int ret)
 	INFO("Emulate a hardware yubikey token in HOTP mode.");
 	exit(ret);
 }
-
-#define EXIT_WITH_FAILURE exit(EXIT_FAILURE)
-#define EXIT_WITH_SUCCESS exit(EXIT_SUCCESS)
 
 int main(int argc, char *argv[])
 {
@@ -744,8 +747,23 @@ int main(int argc, char *argv[])
 		}
 
 		if (!show_registration_info) {
-			if (persistent_data_update(&yksoft) < 0) EXIT_WITH_FAILURE;
-			if (counter_cmd && persistent_data_exec(&yksoft, counter_cmd) < 0) EXIT_WITH_FAILURE;
+			int ret = persistent_data_update(&yksoft);
+
+			switch (ret) {
+			case -1:
+				EXIT_WITH_FAILURE;
+
+			/*
+			 *      ctr was incremented, tell someone...
+			 */
+			case 1:
+				if (!counter_cmd) break;
+				if (persistent_data_exec(&yksoft, counter_cmd) < 0) EXIT_WITH_FAILURE;
+				break;
+
+			case 0:
+				break;
+			}
 			if (persistent_file_write(dir_fd, token_dir, file, &yksoft) < 0) EXIT_WITH_FAILURE;
 		}
 	} else {
