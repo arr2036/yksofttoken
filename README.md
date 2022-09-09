@@ -82,7 +82,7 @@ If you need to see the registration information again, either cat the persistenc
 
 See the output of `yksoft -h`, currently:
 
-```bash
+```text
 usage: ./yksoft [options] [<token file>]
 
   -C <counter_cmd>        Run a persistence command when a new token is generated, or when the 'use' counter increments.
@@ -142,7 +142,7 @@ The default token directory may be altered with the `-f` argument.
 # Loads persistence data from /tmp/foo
 ```
 
-### Restoring a token from a backup
+### Restore a token from a backup
 
 Four pieces of information are needed to restore a soft token, the `public_id`, 
 `private_id`, `aes_key` and `counter`.
