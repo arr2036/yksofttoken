@@ -211,6 +211,96 @@ int persistent_data_generate(yksoft_t *out,
 	return 0;
 }
 
+int persistent_data_exec(yksoft_t *in, char const *cmd)
+{
+        char public_id[sizeof(PUBLIC_ID_FIELD) + 1 + (sizeof(in->public_id) * 2)];
+        char private_id[sizeof(PRIVATE_ID_FIELD) + 1 + (sizeof(in->tok.uid) * 2)];
+        char aes_key[sizeof(AES_KEY_FIELD) + 1 + (sizeof(in->aes_key) * 2)];
+        char counter[sizeof(COUNTER_FIELD) + 1 + (sizeof("65535") - 1)];
+        char session[sizeof(SESSION_FIELD) + 1 + (sizeof("255") - 1)];
+        char created[sizeof(CREATED_FIELD) + 1 + (sizeof("18446744073709551615") - 1)];
+        char lastuse[sizeof(LASTUSE_FIELD) + 1 + (sizeof("18446744073709551615") - 1)];
+        char ponrand[sizeof(PONRAND_FIELD) + 1 + (sizeof("4294967295") - 1)];
+
+        char public_id_modhex[(sizeof(in->public_id) * 2) + 1];
+        char private_id_hex[(sizeof(in->tok.uid) * 2) + 1];
+        char aes_key_hex[(sizeof(in->aes_key) * 2) + 1];
+
+        yubikey_modhex_encode(public_id_modhex, (char const *)in->public_id, sizeof(in->public_id));
+        yubikey_hex_encode(private_id_hex, (char const *)in->tok.uid, sizeof(in->tok.uid));
+        yubikey_hex_encode(aes_key_hex, (char const *)in->aes_key, sizeof(in->aes_key));
+
+        char const * argv[] = {
+                        "-c",
+                        cmd,
+                        NULL
+                };
+        char *envp[] = {
+                        public_id,
+                        private_id,
+                        aes_key,
+                        counter,
+                        session,
+                        created,
+                        lastuse,
+                        ponrand,
+                        NULL
+                };
+        int status;
+        pid_t pid;
+        char const *sh_path = "/bin/sh";
+
+        if (getenv("SHELL")) sh_path = getenv("SHELL");
+
+        DEBUG("Calling \"%s\" to persist token information", cmd);
+
+#define SET_ENV(_buff, _fmt, ...) \
+do { \
+        snprintf(_buff, sizeof(_buff), _fmt, __VA_ARGS__); \
+        DEBUG("%s", _buff); \
+} while (0)
+
+        SET_ENV(public_id, PUBLIC_ID_FIELD "=%s", public_id_modhex);
+        SET_ENV(private_id, PRIVATE_ID_FIELD "=%s", private_id_hex);
+        SET_ENV(aes_key, AES_KEY_FIELD "=%s", aes_key_hex);
+        SET_ENV(counter, COUNTER_FIELD "=%u", in->tok.ctr);
+        SET_ENV(session, SESSION_FIELD "=%u", in->tok.use);
+        SET_ENV(created, CREATED_FIELD "=%" PRIu64, (uint64_t)in->created);
+        SET_ENV(lastuse, LASTUSE_FIELD "=%" PRIu64, (uint64_t)in->lastuse);
+        SET_ENV(ponrand, PONRAND_FIELD "=%u", in->ponrand);
+
+        pid = fork();
+        if (pid < 0) {
+                ERROR("Failed forking persistence command \"%s\"", strerror(errno));
+                return -1;
+        } else if (pid == 0) { /* child */
+                if (execve(sh_path, (char **)((intptr_t)argv), envp) < 0) {      /* never returns on success */
+                        ERROR("Failed executing persistence command \"%s\": %s", cmd, strerror(errno));
+                        exit(EXIT_FAILURE);
+                }
+        }
+
+        /* parent */
+        if (waitpid(pid, &status, 0) < 0) {
+                ERROR("Failed waiting for persistence command: %s", strerror(errno));
+                return -1;
+        }
+
+        if (WIFEXITED(status)) {
+                if (WEXITSTATUS(status) == 0) { /* success */
+                        DEBUG("Persistence command succeeded");
+                } else {
+                        ERROR("Persistence command failed: %u", WIFEXITED(status));
+                        return -1;
+                }
+        } else {
+                ERROR("Persistence command exited abnormally: %i", status);
+                return -1;
+        }
+
+        return 0;
+}
+
 int persistent_data_update(yksoft_t *out)
 {
 	time_t		now = time(NULL);
@@ -447,6 +537,7 @@ static __attribute__((noreturn)) void usage(int ret)
 	INFO("  -r               Prints out registration information to stdout. An OTP will not be generated.");
 	INFO("  -R               Regenerate the specified token.");
 	INFO("  -h               This help text.");
+	INFO("  -C <counter_cmd>        Run a persistence command when a new token is generated, or when the 'use' counter increments.");
 	INFO("");
 	INFO("Emulate a hardware yubikey token in HOTP mode.");
 	exit(ret);
@@ -483,14 +574,19 @@ int main(int argc, char *argv[])
 	bool		regenerate = false;
 
 	prog = argv[0];
+	char const      *counter_cmd = NULL;
 
 	memset(&yksoft, 0, sizeof(yksoft));
 
-	while ((c = getopt(argc, argv, "c:df:I:i:k:rRh")) != -1) switch (c) {
+	while ((c = getopt(argc, argv, "c:C:df:I:i:k:rRh")) != -1) switch (c) {
 		case 'c':
 			counter = strtol((char *)optarg, NULL, 0);
 			got_counter = true;
 			break;
+
+		case 'C':
+		        counter_cmd = optarg;
+		        break;
 
 		case 'd':
 			debug = true;
@@ -640,6 +736,7 @@ int main(int argc, char *argv[])
 
 		if (!show_registration_info) {
 			if (persistent_data_update(&yksoft) < 0) EXIT_WITH_FAILURE;
+			if (counter_cmd && persistent_data_exec(&yksoft, counter_cmd) < 0) EXIT_WITH_FAILURE;
 			if (persistent_file_write(dir_fd, token_dir, file, &yksoft) < 0) EXIT_WITH_FAILURE;
 		}
 	} else {
@@ -653,6 +750,7 @@ int main(int argc, char *argv[])
 		 *	New token, print out the identifier and aes_key
 		 */
 		show_registration_info = true;
+		if (counter_cmd && persistent_data_exec(&yksoft, counter_cmd) < 0) EXIT_WITH_FAILURE;
 		if (persistent_file_write(dir_fd, token_dir, file, &yksoft) < 0) EXIT_WITH_FAILURE;
 	}
 

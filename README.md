@@ -142,6 +142,29 @@ The default token directory may be altered with the `-f` argument.
 # Loads persistence data from /tmp/foo
 ```
 
+### Restoring a token from a backup
+
+Four pieces of information are needed to restore a soft token, the `public_id`, 
+`private_id`, `aes_key` and `counter`.
+
+The first three values are static and should be retrieved from a secure password manager
+and passed in via `-I`, `-i` and `-k` respectively.
+
+`counter` will increment every 255 OTPs generated.  When the counter value is incremented
+the new counter value should be recorded off-box.
+
+If the `-C` argument is provided, whenever `counter` increments, or a new token is 
+generated, the command specified with `-C` is passed as an argument to `/bin/sh -c` 
+(or whichever shell is specified by `$SHELL`).
+
+The contents of the token persistence file is made available as environmental variables.
+For example `${counter}` contains the new `counter` value, and `${public_id}` contains 
+the `public_id` of the token.
+
+It's left as an exercise to the user on how to persist this counter to a remote system.
+
+When restoring from a backup the last known counter value should be passed in via `-c`.
+
 ### Logging
 
 For robustness when calling yksoft from a VPN client, debugging output goes to stderr, 
