@@ -56,7 +56,6 @@
 
 static bool debug = false;
 static char const *prog;
-static char const *default_token_dir = ".yksoft";
 
 #define PUBLIC_ID_FIELD         "public_id"
 #define PRIVATE_ID_FIELD        "private_id"
@@ -573,8 +572,14 @@ int main(int argc, char *argv[])
 	bool		show_registration_info = false;
 	bool		regenerate = false;
 
-	prog = argv[0];
 	char const      *counter_cmd = NULL;
+
+	prog = strrchr(argv[0], '/');
+	if (prog) {
+	        prog++;
+	} else {
+	        prog = argv[0];
+	}
 
 	memset(&yksoft, 0, sizeof(yksoft));
 
@@ -672,7 +677,7 @@ int main(int argc, char *argv[])
 	 *	to the home directory of the user...
 	 */
 	if (!token_dir) {
-		snprintf(token_dir_exp, sizeof(token_dir_exp), "%s/%s", getenv("HOME"), default_token_dir);
+		snprintf(token_dir_exp, sizeof(token_dir_exp), "%s/.%s", getenv("HOME"), prog);
 		token_dir = token_dir_exp;
 	}
 
