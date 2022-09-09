@@ -78,6 +78,37 @@ ddddjkdcunggjfnkgjedvntebkukhejnbffchurkgruc
 If you need to see the registration information again, either cat the persistence file
 (it's there as plaintext), or pass the `-r` flag.
 
+## Arguments
+
+See the output of `yksoft -h`, currently:
+
+```bash
+usage: ./yksoft [options] [<token file>]
+
+  -C <counter_cmd>        Run a persistence command when a new token is generated, or when the 'use' counter increments.
+
+  -c <counter>            Counter for initialisation (0-32766).  Will always be incremented by one on first use.  Defaults to 0.
+
+  -I <public_id>          Public ID as MODHEX to use for initialisation (max 6 bytes i.e. 12 modhexits).  Defaults to dddd<4 byte random>.
+                          If the Public ID is < 6 bytes, the remaining bytes will be randomised.
+
+  -i <private_id>         Private ID as HEX to use for initialisation (6 bytes i.e. 12 hexits).  Defaults to <6 byte random>.
+
+  -k <key>                AES key as HEX to use for initialisation (16 bytes i.e. 32 hexits).  Defaults to <16 byte random>.
+
+  -d                      Turns on debug logging to stderr.
+
+  -f                      Specify the directory tokens are stored in.  Defaults to "~/.yksoft"
+
+  -r                      Prints out registration information to stdout. An OTP will not be generated.
+
+  -R                      Regenerate the specified token.
+
+  -h                      This help text.
+
+Emulate a hardware yubikey token in HOTP mode.
+```
+
 ## How do I...
 ### Emulate an existing physical token
 
