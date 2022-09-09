@@ -1,6 +1,16 @@
-Unreleased
+Ureleased
 ------------------------------------------------------------------------
  
+2022-09-09  v0.0.3
+------------------------------------------------------------------------
+
+   * Take the default token persistence dir from the current binary name.
+     For example if yksoft is renamed foo, we attempt to load 
+     ~/.foo/<token name>.
+
+   * Add -C to allow a persistence command to be specified.  This command
+     runs whenever the use counter increments or a new token is generated.
+
 2022-09-06  v0.0.2
 ------------------------------------------------------------------------
 

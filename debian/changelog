@@ -1,3 +1,14 @@
+yksofttoken (0.0.3-1) focal; urgency=low
+
+   * Take the default token persistence dir from the current binary name.
+     For example if yksoft is renamed foo, we attempt to load 
+     ~/.foo/<token name>.
+
+   * Add -C to allow a persistence command to be specified.  This command
+     runs whenever the use counter increments or a new token is generated.
+
+ -- Arran Cudbard-Bell <a.cudbardb@freeradius.org>  Fri, 9 Sep 2022 17:37:00 +0000
+
 yksofttoken (0.0.2-1) focal; urgency=low
 
    * Print registration information in CSV, so it's easier to ingest into DUO.
