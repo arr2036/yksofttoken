@@ -58,6 +58,14 @@ static bool debug = false;
 static char const *prog;
 static char const *default_token_dir = ".yksoft";
 
+#define PUBLIC_ID_FIELD         "public_id"
+#define PRIVATE_ID_FIELD        "private_id"
+#define AES_KEY_FIELD           "aes_key"
+#define COUNTER_FIELD           "counter"
+#define SESSION_FIELD           "session"
+#define CREATED_FIELD           "created"
+#define LASTUSE_FIELD           "lastuse"
+#define PONRAND_FIELD           "ponrand"
 
 #define ERROR(_fmt, ...) fprintf(stderr, _fmt "\n", ## __VA_ARGS__)
 #define INFO(_fmt, ...) fprintf(stdout, _fmt "\n", ## __VA_ARGS__)
@@ -127,14 +135,14 @@ do { \
 
 	DEBUG("Persisting data to \"%s/%s\"", token_dir, path);
 	DEBUG("===");
-	WRITE("public_id: %s", public_id_modhex);
-	WRITE("private_id: %s", private_id_hex);
-	WRITE("aes_key: %s", aes_key_hex);
-	WRITE("counter: %u", in->tok.ctr);
-	WRITE("session: %u", in->tok.use);
-	WRITE("created: %" PRIu64, (uint64_t)in->created);
-	WRITE("lastuse: %" PRIu64, (uint64_t)in->lastuse);
-	WRITE("ponrand: %u", in->ponrand);
+	WRITE(PUBLIC_ID_FIELD ": %s", public_id_modhex);
+	WRITE(PRIVATE_ID_FIELD ": %s", private_id_hex);
+	WRITE(AES_KEY_FIELD ": %s", aes_key_hex);
+	WRITE(COUNTER_FIELD ": %u", in->tok.ctr);
+	WRITE(SESSION_FIELD ": %u", in->tok.use);
+	WRITE(CREATED_FIELD ": %" PRIu64, (uint64_t)in->created);
+	WRITE(LASTUSE_FIELD ": %" PRIu64, (uint64_t)in->lastuse);
+	WRITE(PONRAND_FIELD ": %u", in->ponrand);
 	DEBUG("");
 
 	fgetpos(persist, &pos);
@@ -325,90 +333,90 @@ int persistent_data_load(yksoft_t *out, int token_dir_fd, char const *token_dir,
 		/*
 		 *	Match the key
 		 */
-		if (strcmp(key, "public_id") == 0) {
+		if (strcmp(key, PUBLIC_ID_FIELD) == 0) {
 			if (strlen(p) != (sizeof(out->public_id) * 2)) {
-				ERROR("Invalid size for \"public_id\", expected %zu, got %zu (%s)",
+				ERROR("Invalid size for \"" PUBLIC_ID_FIELD "\", expected %zu, got %zu (%s)",
 				      (sizeof(out->tok.uid) * 2), strlen(p), p);
 				goto error;
 			}
 			yubikey_modhex_decode((char *)out->public_id, p, sizeof(out->public_id));
 
-			DEBUG("public_id: %s", p);
-		} else if (strcmp(key, "private_id") == 0) {
+			DEBUG(PUBLIC_ID_FIELD ": %s", p);
+		} else if (strcmp(key, PRIVATE_ID_FIELD) == 0) {
 			if (strlen(p) != (sizeof(out->tok.uid) * 2)) {
-				ERROR("Invalid size for \"private_id\", expected %zu, got %zu (%s)",
+				ERROR("Invalid size for \"" PRIVATE_ID_FIELD "\", expected %zu, got %zu (%s)",
 				      (sizeof(out->tok.uid) * 2), strlen(p), p);
 				goto error;
 			}
 			yubikey_hex_decode((char *)out->tok.uid, p, sizeof(out->tok.uid));
 
-			DEBUG("private_id: %s", p);
-		} else if (strcmp(key, "aes_key") == 0) {
+			DEBUG(PRIVATE_ID_FIELD ": %s", p);
+		} else if (strcmp(key, AES_KEY_FIELD) == 0) {
 			if (strlen(p) != (sizeof(out->aes_key) * 2)) {
-				ERROR("Invalid size for \"aes_key\", expected %zu, got %zu (%s)",
+				ERROR("Invalid size for \"" AES_KEY_FIELD "\", expected %zu, got %zu (%s)",
 				      (sizeof(out->aes_key) * 2), strlen(p), p);
 				goto error;
 			}
 			yubikey_hex_decode((char *)out->aes_key, p, sizeof(out->aes_key));
 
-			DEBUG("aes_key: %s", p);
-		} else if (strcmp(key, "counter") == 0) {
+			DEBUG(AES_KEY_FIELD ": %s", p);
+		} else if (strcmp(key, COUNTER_FIELD) == 0) {
 			num = strtoull(p, &num_end, 10);
 			if ((num_end != end_p) || (num > 0x7ffff)) {
-				ERROR("Invalid counter value");
+				ERROR("Invalid " COUNTER_FIELD " value");
 				goto error;
 			}
 			out->tok.ctr = (uint16_t)num;
 
-			DEBUG("counter: %u", out->tok.ctr);
-		} else if (strcmp(key, "session") == 0) {
+			DEBUG(COUNTER_FIELD ": %u", out->tok.ctr);
+		} else if (strcmp(key, SESSION_FIELD) == 0) {
 			num = strtoull(p, &num_end, 10);
 			if ((num_end != end_p) || (num > 0xff)) {
-				ERROR("Invalid session value");
+				ERROR("Invalid " SESSION_FIELD " value");
 				goto error;
 			}
 			out->tok.use = (uint8_t)num;
 
-			DEBUG("session: %u", out->tok.use);
-		} else if (strcmp(key, "created") == 0) {
+			DEBUG(SESSION_FIELD ": %u", out->tok.use);
+		} else if (strcmp(key, CREATED_FIELD) == 0) {
 			num = strtoull(p, &num_end, 10);
 			if (num_end != end_p) {
-				ERROR("Invalid created value");
+				ERROR("Invalid " CREATED_FIELD " value");
 				goto error;
 			}
 			out->created = (time_t)num;
 
-			DEBUG("created: %" PRIu64, (uint64_t)out->created);
+			DEBUG(CREATED_FIELD ": %" PRIu64, (uint64_t)out->created);
 		/*
 		 *	When the token was last used
 		 */
-		} else if (strcmp(key, "lastuse") == 0) {
+		} else if (strcmp(key, LASTUSE_FIELD) == 0) {
 			num = strtoull(p, &num_end, 10);
 			if (num_end != end_p) {
-				ERROR("Invalid lastuse value");
+				ERROR("Invalid " LASTUSE_FIELD " value");
 				goto error;
 			}
 			out->lastuse = (time_t)num;
 			if (out->lastuse > time(NULL)) {
-				ERROR("lastuse time travel detected, refusing to generated token for %"PRIu64"s",
+				ERROR(LASTUSE_FIELD " time travel detected, refusing to generated token for %"PRIu64"s",
 				      (uint64_t)(out->lastuse - num));
 				goto error;
 			}
 
-			DEBUG("lastuse: %" PRIu64, (uint64_t)out->lastuse);
+			DEBUG(LASTUSE_FIELD ": %" PRIu64, (uint64_t)out->lastuse);
 		/*
 		 *	Random number from last time the token
 		 *	was "powered on"
 		 */
-		} else if (strcmp(key, "ponrand") == 0) {
+		} else if (strcmp(key, PONRAND_FIELD) == 0) {
 			num = strtoull(p, &num_end, 10);
 			if (num_end != end_p) {
-				ERROR("Invalid ponrand value");
+				ERROR("Invalid " PONRAND_FIELD " value");
 				goto error;
 			}
 			out->ponrand = num;
 
-			DEBUG("ponrand: %u", out->ponrand);
+			DEBUG(PONRAND_FIELD ": %u", out->ponrand);
 		}
 	}
 	if (((errno = ferror(persist)) != 0) || (feof(persist) == 0)) {
@@ -663,13 +671,13 @@ int main(int argc, char *argv[])
 
 		DEBUG("Registration information");
 		DEBUG("===");
-		DEBUG("public_id_modhex: %s", public_id_modhex);
-		DEBUG("public_id_hex: %s", public_id_hex);
-		DEBUG("public_id_dec: %" PRIu64, nbo_48(yksoft.public_id));
-		DEBUG("private_id_modhex: %s", private_id_modhex);
-		DEBUG("private_id_hex: %s", private_id_hex);
-		DEBUG("private_id_dec: %" PRIu64, nbo_48(yksoft.tok.uid));
-		DEBUG("aes_key_hex: %s", aes_key_hex);
+		DEBUG(PUBLIC_ID_FIELD "_modhex: %s", public_id_modhex);
+		DEBUG(PUBLIC_ID_FIELD "_hex: %s", public_id_hex);
+		DEBUG(PUBLIC_ID_FIELD "_dec: %" PRIu64, nbo_48(yksoft.public_id));
+		DEBUG(PRIVATE_ID_FIELD "_modhex: %s", private_id_modhex);
+		DEBUG(PRIVATE_ID_FIELD "_hex: %s", private_id_hex);
+		DEBUG(PRIVATE_ID_FIELD "_dec: %" PRIu64, nbo_48(yksoft.tok.uid));
+		DEBUG(AES_KEY_FIELD "_hex: %s", aes_key_hex);
 		INFO("%s, %s, %s", public_id_modhex, private_id_hex, aes_key_hex);
 		DEBUG("");
 
