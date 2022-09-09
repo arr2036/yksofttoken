@@ -165,7 +165,7 @@ It's left as an exercise to the user on how to persist this counter to a remote 
 
 When restoring from a backup the last known counter value should be passed in via `-c`.
 
-### Logging
+## Logging
 
 For robustness when calling yksoft from a VPN client, debugging output goes to stderr, 
 only the OTP token and registration information is written to stdout.
