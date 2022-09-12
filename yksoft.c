@@ -244,26 +244,22 @@ int persistent_data_exec(yksoft_t *in, char const *cmd)
 	char private_id_hex[(sizeof(in->tok.uid) * 2) + 1];
 	char aes_key_hex[(sizeof(in->aes_key) * 2) + 1];
 
-	yubikey_modhex_encode(public_id_modhex, (char const *)in->public_id, sizeof(in->public_id));
-	yubikey_hex_encode(private_id_hex, (char const *)in->tok.uid, sizeof(in->tok.uid));
-	yubikey_hex_encode(aes_key_hex, (char const *)in->aes_key, sizeof(in->aes_key));
-
 	char const * argv[] = {
-			"-c",
-			cmd,
-			NULL
-		};
+				"-c",
+				cmd,
+				NULL
+			};
 	char *envp[] = {
-			public_id,
-			private_id,
-			aes_key,
-			counter,
-			session,
-			created,
-			lastuse,
-			ponrand,
-			NULL
-		};
+				public_id,
+				private_id,
+				aes_key,
+				counter,
+				session,
+				created,
+				lastuse,
+				ponrand,
+				NULL
+			};
 	int status;
 	pid_t pid;
 	char const *sh_path = "/bin/sh";
@@ -277,6 +273,10 @@ do { \
 	snprintf(_buff, sizeof(_buff), _fmt, __VA_ARGS__); \
 	DEBUG("%s", _buff); \
 } while (0)
+
+	yubikey_modhex_encode(public_id_modhex, (char const *)in->public_id, sizeof(in->public_id));
+	yubikey_hex_encode(private_id_hex, (char const *)in->tok.uid, sizeof(in->tok.uid));
+	yubikey_hex_encode(aes_key_hex, (char const *)in->aes_key, sizeof(in->aes_key));
 
 	SET_ENV(public_id, PUBLIC_ID_FIELD "=%s", public_id_modhex);
 	SET_ENV(private_id, PRIVATE_ID_FIELD "=%s", private_id_hex);
@@ -323,7 +323,7 @@ int persistent_data_update(yksoft_t *out)
 {
 	time_t		now = time(NULL);
 	uint64_t	hztime;
-	int	     ret = 0;
+	int		ret = 0;
 
 	/*
 	 *	Too many session uses, increment the
@@ -556,7 +556,6 @@ static __attribute__((noreturn)) void usage(int ret)
 	INFO("  -d                      Turns on debug logging to stderr.");
 	INFO("");
 	INFO("  -f                      Specify the directory tokens are stored in.  Defaults to \"~/.%s\"", prog);
-	INFO("  -f		      Specify the directory tokens are stored in.  Defaults to \"~/.%s\"", prog);
 	INFO("");
 	INFO("  -r                      Prints out registration information to stdout. An OTP will not be generated.");
 	INFO("");
@@ -798,11 +797,11 @@ int main(int argc, char *argv[])
 	}
 
 	if (show_registration_info) {
-		char	public_id_modhex[(sizeof(yksoft.public_id) * 2) + 1];
-		char	public_id_hex[(sizeof(yksoft.public_id) * 2) + 1];
-		char	private_id_hex[(sizeof(yksoft.tok.uid) * 2) + 1];
-		char	private_id_modhex[(sizeof(yksoft.tok.uid) * 2) + 1];
-		char	aes_key_hex[(sizeof(yksoft.aes_key) * 2) + 1];
+		char public_id_modhex[(sizeof(yksoft.public_id) * 2) + 1];
+		char public_id_hex[(sizeof(yksoft.public_id) * 2) + 1];
+		char private_id_hex[(sizeof(yksoft.tok.uid) * 2) + 1];
+		char private_id_modhex[(sizeof(yksoft.tok.uid) * 2) + 1];
+		char aes_key_hex[(sizeof(yksoft.aes_key) * 2) + 1];
 
 		yubikey_modhex_encode(public_id_modhex, (char const *)yksoft.public_id, sizeof(yksoft.public_id));
 		if (debug) yubikey_modhex_encode(private_id_modhex, (char const *)yksoft.tok.uid, sizeof(yksoft.tok.uid));
