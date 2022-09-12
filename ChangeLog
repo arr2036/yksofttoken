@@ -1,11 +1,14 @@
-Ureleased
+2022-09-11  v0.0.4
 ------------------------------------------------------------------------
- 
+
+   * Remove unecessary dependency on the arc4random functions under Linux.
+     `getrandom()` is apparently cryptographically secure.
+
 2022-09-09  v0.0.3
 ------------------------------------------------------------------------
 
    * Take the default token persistence dir from the current binary name.
-     For example if yksoft is renamed foo, we attempt to load 
+     For example if yksoft is renamed foo, we attempt to load
      ~/.foo/<token name>.
 
    * Add -C to allow a persistence command to be specified.  This command
@@ -15,11 +18,11 @@ Ureleased
 ------------------------------------------------------------------------
 
    * Print registration information in CSV, so it's easier to ingest into DUO.
- 
+
    * Place token data in ~/.yksoft/<name> by default
 
 2022-08-25  v0.0.1
 ------------------------------------------------------------------------
 
-   * Initial release. 
- 
+   * Initial release.
+

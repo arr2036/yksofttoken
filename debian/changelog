@@ -1,7 +1,14 @@
+yksofttoken (0.0.4-1) focal; urgency=low
+
+   * Remove unecessary dependency on the arc4random functions under Linux.
+     `getrandom()` is apparently cryptographically secure.
+
+ -- Arran Cudbard-Bell <a.cudbardb@freeradius.org>  Sun, 11 Sep 2022 22:01:00 +0000
+
 yksofttoken (0.0.3-1) focal; urgency=low
 
    * Take the default token persistence dir from the current binary name.
-     For example if yksoft is renamed foo, we attempt to load 
+     For example if yksoft is renamed foo, we attempt to load
      ~/.foo/<token name>.
 
    * Add -C to allow a persistence command to be specified.  This command
