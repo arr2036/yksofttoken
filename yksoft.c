@@ -51,7 +51,7 @@
 #include <unistd.h>
 
 #ifdef __linux__
-#  include <bsd/stdlib.h>
+#  include <sys/random.h>
 #endif
 
 static bool debug = false;
@@ -72,6 +72,21 @@ static char const *prog;
 #define ERROR(_fmt, ...) fprintf(stderr, _fmt "\n", ## __VA_ARGS__)
 #define INFO(_fmt, ...) fprintf(stdout, _fmt "\n", ## __VA_ARGS__)
 #define DEBUG(_fmt, ...) if (debug) fprintf(stderr, _fmt "\n", ## __VA_ARGS__)
+
+#ifdef __linux__
+#  define random_fill(_buff, _len) getrandom(_buff, _len, 0);
+#else
+#  define random_fill(_buff, _len) arc4random_buf(_buff, _len);
+#endif
+
+static inline uint32_t random_uint32(void)
+{
+	uint32_t ret;
+
+	random_fill(&ret, sizeof(ret));
+
+	return ret;
+}
 
 typedef struct {
 	yubikey_token_st	tok;				//!< Token information structure
@@ -178,7 +193,7 @@ int persistent_data_generate(yksoft_t *out,
 		struct { uint16_t a; uint32_t b; } __attribute__((packed)) rid;
 
 		rid.a = 0x2222;	/* dddd in modhex */
-		rid.b = arc4random();
+		rid.b = random_uint32();
 
 		memcpy(out->public_id, (uint8_t *)&rid, sizeof(out->public_id));
 	} else {
@@ -186,13 +201,13 @@ int persistent_data_generate(yksoft_t *out,
 	}
 
 	if (!private_id) {
-		arc4random_buf(out->tok.uid, sizeof(out->tok.uid));
+		random_fill(out->tok.uid, sizeof(out->tok.uid));
 	} else {
 		memcpy(out->tok.uid, private_id, sizeof(out->tok.uid));
 	}
 
 	if (!aes_key) {
-		arc4random_buf(out->aes_key, sizeof(out->aes_key));
+		random_fill(out->aes_key, sizeof(out->aes_key));
 	} else {
 		memcpy(out->aes_key, aes_key, sizeof(out->aes_key));
 	}
@@ -201,14 +216,14 @@ int persistent_data_generate(yksoft_t *out,
 	out->tok.use = 1;				/* First "session" */
 
 	out->lastuse = out->created = time(NULL);	/* Record the token creation time */
-	out->ponrand = arc4random() & 0xfffffff0;	/* Fudge the time, so not all tokens are synced to time() */
 
+	out->ponrand = random_uint32() & 0xfffffff0;	/* Fudge the time, so not all tokens are synced to time() */
 	hztime = out->ponrand;
 	hztime %= 0xffffff;	/* 24bit wrap */
 
 	out->tok.tstpl = hztime & 0xffff;
 	out->tok.tstph = (hztime >> 16) & 0xff;
-	out->tok.rnd = arc4random();
+	out->tok.rnd = random_uint32();
 
 	return 0;
 }
@@ -323,7 +338,7 @@ int persistent_data_update(yksoft_t *out)
 			ERROR("Token counter at max, token must be regenerated");
 			return -1;
 		}
-		out->ponrand = arc4random();	/* We don't *really* need to regenerate this, but whatever */
+		out->ponrand = random_uint32();	/* We don't *really* need to regenerate this, but whatever */
 		out->tok.use = 1;		/* Reset session use counter */
 		ret = 1;			/* Tell the caller we wrapped */
 	} else {
@@ -360,7 +375,7 @@ again:
 
 	out->tok.tstpl = hztime & 0xffff;
 	out->tok.tstph = (hztime >> 16) & 0xff;
-	out->tok.rnd = arc4random();
+	out->tok.rnd = random_uint32();
 
 	return ret;
 }
@@ -629,7 +644,7 @@ int main(int argc, char *argv[])
 			 *	Allow prefixes to be specified for the public id
 			 */
 			if (public_id_len < sizeof(public_id)) {
-				arc4random_buf(public_id + public_id_len, sizeof(public_id) - public_id_len);
+				random_fill(public_id + public_id_len, sizeof(public_id) - public_id_len);
 			}
 			got_public_id = true;
 		}

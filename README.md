@@ -26,7 +26,6 @@ high security, this utility is not as secure as a physical Yubikey.
 ## Building
 
 yksoft has a single 3rd party dependency which is `libyubikey`.
-yksoft also requires the `arc4random` functions provided by the BSD standard library.
 
 ### macos
 
@@ -38,14 +37,14 @@ make
 ### Debian/Ubuntu
 
 ```bash
-sudo apt-get install libyubikey-dev libbsd-dev
+sudo apt-get install libyubikey-dev
 make
 ```
 
 ### RHEL/Rocky etc...
 
 ```bash
-yum install libyubikey-devel libbsd-devel
+yum install libyubikey-devel
 make
 ```
 
@@ -112,8 +111,8 @@ Emulate a hardware yubikey token in HOTP mode.
 ## How do I...
 ### Emulate an existing physical token
 
-If the public identity, private identity, AES key, and counter of an existing token 
-are known they can be passed in via `-I <modhex>`, `-i <hex>`, `-k <hex>` and 
+If the public identity, private identity, AES key, and counter of an existing token
+are known they can be passed in via `-I <modhex>`, `-i <hex>`, `-k <hex>` and
 `-c <uint>` respectively.
 
 These values will be written to the persitence file instead of random values being used.
@@ -122,8 +121,8 @@ The value passed in via `-c` is always incremented by 1, to "reset" the session 
 
 ### Generate a public ID from a prefix
 
-Where a public identity is specified with `-I` any identity bytes not provided on the 
-command line, will be filled with random bytes.  Passing `-I frfr` for example, would 
+Where a public identity is specified with `-I` any identity bytes not provided on the
+command line, will be filled with random bytes.  Passing `-I frfr` for example, would
 produce a public identity with a `frfr` prefix e.g. `frfrttuhdgvb`.
 
 ### Use multiple tokens
@@ -144,7 +143,7 @@ The default token directory may be altered with the `-f` argument.
 
 ### Restore a token from a backup
 
-Four pieces of information are needed to restore a soft token, the `public_id`, 
+Four pieces of information are needed to restore a soft token, the `public_id`,
 `private_id`, `aes_key` and `counter`.
 
 The first three values are static and should be retrieved from a secure password manager
@@ -153,12 +152,12 @@ and passed in via `-I`, `-i` and `-k` respectively.
 `counter` will increment every 255 OTPs generated.  When the counter value is incremented
 the new counter value should be recorded off-box.
 
-If the `-C` argument is provided, whenever `counter` increments, or a new token is 
-generated, the command specified with `-C` is passed as an argument to `/bin/sh -c` 
+If the `-C` argument is provided, whenever `counter` increments, or a new token is
+generated, the command specified with `-C` is passed as an argument to `/bin/sh -c`
 (or whichever shell is specified by `$SHELL`).
 
 The contents of the token persistence file is made available as environmental variables.
-For example `${counter}` contains the new `counter` value, and `${public_id}` contains 
+For example `${counter}` contains the new `counter` value, and `${public_id}` contains
 the `public_id` of the token.
 
 It's left as an exercise to the user on how to persist this counter to a remote system.
@@ -167,7 +166,7 @@ When restoring from a backup the last known counter value should be passed in vi
 
 ## Logging
 
-For robustness when calling yksoft from a VPN client, debugging output goes to stderr, 
+For robustness when calling yksoft from a VPN client, debugging output goes to stderr,
 only the OTP token and registration information is written to stdout.
 
 Debug logging may be enabled with `-d`.
@@ -175,7 +174,7 @@ Debug logging may be enabled with `-d`.
 ## VPN clients
 ### Openconnect
 
-The easiest way to submit both factors to openconnect is via `--password-on-stdin`.  
+The easiest way to submit both factors to openconnect is via `--password-on-stdin`.
 In the example below we pipe in the first factor, then the output of yksoft separated
 by the newline from echo.  You could also `cat` the first factor from a file.
 
