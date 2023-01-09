@@ -121,8 +121,8 @@ The value passed in via `-c` is always incremented by 1, to "reset" the session 
 
 ### Generate a public ID from a prefix
 
-Where a public identity is specified with `-I` any identity bytes not provided on the
-command line, will be filled with random bytes.  Passing `-I frfr` for example, would
+Where a public identity is specified with `-I`, any identity bytes not provided on the
+command line will be filled with random bytes.  Passing `-I frfr` for example, would
 produce a public identity with a `frfr` prefix e.g. `frfrttuhdgvb`.
 
 ### Use multiple tokens
