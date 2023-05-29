@@ -31,7 +31,6 @@ yksoft has a single 3rd party dependency which is `libyubikey`.
 
 ```bash
 brew install libyubikey
-make
 ```
 
 ### Debian/Ubuntu
