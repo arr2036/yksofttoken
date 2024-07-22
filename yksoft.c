@@ -572,7 +572,7 @@ int main(int argc, char *argv[])
 	yksoft_t	yksoft;
 	char		otp[(YUBIKEY_UID_SIZE * 2) + YUBIKEY_OTP_SIZE + 1];
 	char const	*file;
-  	char		c;
+  	int		c; /* needs to be int to work on systems with unsigned char type */
   	struct stat	pstat;
   	char const	*token_dir = NULL;
   	char		token_dir_exp[PATH_MAX + 1];
@@ -605,7 +605,7 @@ int main(int argc, char *argv[])
 
 	memset(&yksoft, 0, sizeof(yksoft));
 
-	while ((c = getopt(argc, argv, "c:C:df:I:i:k:rRh")) != -1) switch (c) {
+	while ((c = getopt(argc, argv, "c:C:df:I:i:k:rRh")) != -1) switch ((char)c) {
 		case 'c':
 			counter = strtol((char *)optarg, NULL, 0);
 			got_counter = true;
