@@ -685,7 +685,7 @@ int main(int argc, char *argv[])
 			break;
 		
 		default:
-			ERROR("Unrecognised argument '%c'", c)
+			ERROR("Unrecognised argument '%c'", c);
 			usage(64);
 	}
 	argc -= optind;
