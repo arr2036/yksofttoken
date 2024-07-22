@@ -681,9 +681,12 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'h':
-		default:
 			usage(EXIT_SUCCESS);
 			break;
+		
+		default:
+			ERROR("Unrecognised argument '%c'", c)
+			usage(64);
 	}
 	argc -= optind;
 	argv += optind;
