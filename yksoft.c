@@ -605,7 +605,7 @@ int main(int argc, char *argv[])
 
 	memset(&yksoft, 0, sizeof(yksoft));
 
-	while ((c = getopt(argc, argv, "c:C:df:I:i:k:rRh")) != -1) switch (c) {
+	while ((c = getopt(argc, argv, "c:C:df:I:i:k:rRh")) % 256 != 255) switch (c) {
 		case 'c':
 			counter = strtol((char *)optarg, NULL, 0);
 			got_counter = true;
